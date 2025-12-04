@@ -1,42 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProductCard from "../ProductCard";
-import ProductModal from "../ProductModal";
-
-// Importing images from the correct relative path based on BestSellers.tsx
-import best1 from '../../images/best1.png';
-import bs2 from '../../images/bs2.jpg';
-import bs3 from '../../images/bs3.png';
-import bs4 from '../../images/bs4.png';
+import { itemsAPI, Item } from "../../utils/api";
+import { Loader2 } from "lucide-react";
 
 const BestSellersPage: React.FC = () => {
-    const [selected, setSelected] = useState(null);
+    const [products, setProducts] = useState<Item[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const products = [
-        {
-            id: 1,
-            title: 'Couple Anniversary Gifts',
-            price: 4999,
-            image: best1,
-        },
-        {
-            id: 2,
-            title: 'Handmade designs for clothing',
-            price: 5999,
-            image: bs2,
-        },
-        {
-            id: 3,
-            title: 'Elegant outline Design',
-            price: 2999,
-            image: bs3,
-        },
-        {
-            id: 4,
-            title: 'Customized for your loved ones',
-            price: 3999,
-            image: bs4,
-        },
-    ];
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const items = await itemsAPI.getItems('Best Sellers', true);
+                const formattedProducts = items.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    price: item.price,
+                    image: item.image,
+                    imageType: item.imageType || 'image/jpeg',
+                    description: item.description,
+                    stock: item.stock,
+                    discount: item.discount,
+                    discountTitle: item.discountTitle,
+                    discountStartDate: item.discountStartDate,
+                    discountEndDate: item.discountEndDate
+                }));
+                setProducts(formattedProducts);
+            } catch (err) {
+                console.error('Error fetching best sellers items:', err);
+                setError('Failed to load products. Please try again later.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchItems();
+    }, []);
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10">
@@ -44,13 +45,25 @@ const BestSellersPage: React.FC = () => {
                 Best Sellers
             </h1>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                {products.map((p) => (
-                    <ProductCard key={p.id} product={p} onClick={setSelected} />
-                ))}
-            </div>
-
-            <ProductModal product={selected} onClose={() => setSelected(null)} />
+            {isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="animate-spin text-emerald-600" size={48} />
+                </div>
+            ) : error ? (
+                <div className="text-center py-20 text-red-600">
+                    <p>{error}</p>
+                </div>
+            ) : products.length === 0 ? (
+                <div className="text-center py-20 text-emerald-600">
+                    <p>No products available in this category.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    {products.map((p) => (
+                        <ProductCard key={p.id} product={p} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

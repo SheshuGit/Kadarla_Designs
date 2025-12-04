@@ -1,30 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProductCard from "../ProductCard";
-import ProductModal from "../ProductModal";
+import { itemsAPI, Item } from "../../utils/api";
+import { Loader2 } from "lucide-react";
 
 const Anniversary: React.FC = () => {
-    const [selected, setSelected] = useState(null);
+    const [products, setProducts] = useState<Item[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const products = [
-        {
-            id: 1,
-            title: "Romantic Love Hamper",
-            price: 2299,
-            image: "/images/anniversary1.png",
-        },
-        {
-            id: 2,
-            title: "Couple Celebration Box",
-            price: 3199,
-            image: "/images/anniversary2.png",
-        },
-        {
-            id: 3,
-            title: "Sweet Love Basket",
-            price: 1899,
-            image: "/images/anniversary3.png",
-        },
-    ];
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const items = await itemsAPI.getItems('Anniversary', true);
+                console.log('Anniversary: Fetched items from API', {
+                    count: items.length,
+                    items: items.map(i => ({
+                        id: i.id,
+                        title: i.title,
+                        hasImage: !!i.image,
+                        imageLength: i.image?.length || 0,
+                        imageType: i.imageType
+                    }))
+                });
+                const formattedProducts = items.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    price: item.price,
+                    image: item.image,
+                    imageType: item.imageType || 'image/jpeg',
+                    description: item.description,
+                    stock: item.stock,
+                    discount: item.discount,
+                    discountTitle: item.discountTitle,
+                    discountStartDate: item.discountStartDate,
+                    discountEndDate: item.discountEndDate
+                }));
+                setProducts(formattedProducts);
+            } catch (err) {
+                console.error('Error fetching anniversary items:', err);
+                setError('Failed to load products. Please try again later.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchItems();
+    }, []);
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10">
@@ -32,13 +55,25 @@ const Anniversary: React.FC = () => {
                 Anniversary
             </h1>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                {products.map((p) => (
-                    <ProductCard key={p.id} product={p} onClick={setSelected} />
-                ))}
-            </div>
-
-            <ProductModal product={selected} onClose={() => setSelected(null)} />
+            {isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="animate-spin text-emerald-600" size={48} />
+                </div>
+            ) : error ? (
+                <div className="text-center py-20 text-red-600">
+                    <p>{error}</p>
+                </div>
+            ) : products.length === 0 ? (
+                <div className="text-center py-20 text-emerald-600">
+                    <p>No products available in this category.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    {products.map((p) => (
+                        <ProductCard key={p.id} product={p} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

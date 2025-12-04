@@ -1,24 +1,55 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProductCard from "../ProductCard";
-import ProductModal from "../ProductModal";
+import { itemsAPI, Item } from "../../utils/api";
+import { Loader2 } from "lucide-react";
 
 const Birthday: React.FC = () => {
-    const [selected, setSelected] = useState(null);
+    const [products, setProducts] = useState<Item[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const products = [
-        {
-            id: 1,
-            title: "Sip & Share Surprise",
-            price: 1649,
-            image: "/images/bday1.png",
-        },
-        {
-            id: 2,
-            title: "Sweet Alternatives",
-            price: 3079,
-            image: "/images/bday2.png",
-        },
-    ];
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const items = await itemsAPI.getItems('Birthday', true);
+                console.log('Birthday: Fetched items from API', {
+                    count: items.length,
+                    items: items.map(i => ({
+                        id: i.id,
+                        title: i.title,
+                        hasImage: !!i.image,
+                        imageLength: i.image?.length || 0,
+                        imageType: i.imageType
+                    }))
+                });
+                // Convert items to product format
+                const formattedProducts = items.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    price: item.price,
+                    image: item.image, // Base64 string from database
+                    imageType: item.imageType || 'image/jpeg', // Ensure imageType is set
+                    description: item.description,
+                    stock: item.stock,
+                    discount: item.discount,
+                    discountTitle: item.discountTitle,
+                    discountStartDate: item.discountStartDate,
+                    discountEndDate: item.discountEndDate
+                }));
+                console.log('Birthday: Formatted products', formattedProducts.length);
+                setProducts(formattedProducts);
+            } catch (err) {
+                console.error('Error fetching birthday items:', err);
+                setError('Failed to load products. Please try again later.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchItems();
+    }, []);
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10">
@@ -26,13 +57,25 @@ const Birthday: React.FC = () => {
                 Birthday
             </h1>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                {products.map((p) => (
-                    <ProductCard key={p.id} product={p} onClick={setSelected} />
-                ))}
-            </div>
-
-            <ProductModal product={selected} onClose={() => setSelected(null)} />
+            {isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="animate-spin text-emerald-600" size={48} />
+                </div>
+            ) : error ? (
+                <div className="text-center py-20 text-red-600">
+                    <p>{error}</p>
+                </div>
+            ) : products.length === 0 ? (
+                <div className="text-center py-20 text-emerald-600">
+                    <p>No products available in this category.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    {products.map((p) => (
+                        <ProductCard key={p.id} product={p} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
