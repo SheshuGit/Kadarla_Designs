@@ -1,4 +1,16 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Ensure API_BASE_URL always ends with /api
+const getApiBaseUrl = () => {
+  // @ts-ignore - Vite environment variables
+  const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  // Remove trailing slash if present
+  const baseUrl = envUrl.replace(/\/$/, '');
+  // Add /api if not already present
+  const finalUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+  console.log('🔧 API Base URL configured:', finalUrl);
+  return finalUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T> {
   success: boolean;
