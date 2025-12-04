@@ -19,8 +19,15 @@ import logo from '../../images/anuja_logo.png';
 const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Closed by default on mobile
   const [ordersSubmenuOpen, setOrdersSubmenuOpen] = useState(true);
+
+  // Close sidebar when clicking outside on mobile
+  const handleOverlayClick = () => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
 
   const menuItems = [
     {
@@ -74,9 +81,27 @@ const AdminLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-mint-50 to-pastel-blue/20">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden transition-opacity"
+          onClick={handleOverlayClick}
+        />
+      )}
+
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-50 lg:hidden p-3 bg-white rounded-xl shadow-lg text-emerald-700 hover:bg-emerald-50 transition-all"
+      >
+        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
       {/* Sidebar */}
       <div className={`fixed left-0 top-0 h-full bg-white shadow-2xl transition-all duration-300 z-40 ${
-        sidebarOpen ? 'w-64' : 'w-20'
+        sidebarOpen 
+          ? 'w-64 translate-x-0' 
+          : 'w-64 -translate-x-full lg:translate-x-0 lg:w-20'
       }`}>
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-4 border-b border-emerald-100">
@@ -95,14 +120,14 @@ const AdminLayout: React.FC = () => {
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-700 transition-colors"
+            className="hidden lg:flex p-2 rounded-lg hover:bg-emerald-50 text-emerald-700 transition-colors"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-140px)]">
+        <nav className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-140px)] custom-scrollbar">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path, item.exact);
@@ -174,8 +199,8 @@ const AdminLayout: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
-        <div className="p-6 md:p-8">
+      <div className={`transition-all duration-300 lg:${sidebarOpen ? 'ml-64' : 'ml-20'} pt-20 lg:pt-0`}>
+        <div className="p-4 sm:p-6 md:p-8">
           <Outlet />
         </div>
       </div>

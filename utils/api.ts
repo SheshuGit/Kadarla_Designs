@@ -229,6 +229,16 @@ export const itemsAPI = {
     return response.data!.item;
   },
 
+  getItemsBatch: async (itemIds: string[]): Promise<Item[]> => {
+    const response = await apiRequest<{ items: Item[] }>('/items/batch', {
+      method: 'POST',
+      body: JSON.stringify({
+        itemIds,
+      }),
+    });
+    return response.data!.items;
+  },
+
   updateItem: async (
     id: string,
     updates: Partial<Item>
@@ -322,6 +332,143 @@ export const reviewsAPI = {
 
   deleteReview: async (id: string): Promise<void> => {
     await apiRequest(`/reviews/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Favorite interface
+export interface Favorite {
+  id: string;
+  userId: string;
+  itemId: string;
+  item?: Item;
+  createdAt: string;
+}
+
+// Favorites API
+export const favoritesAPI = {
+  getUserFavorites: async (userId: string, includeItems: boolean = false): Promise<Favorite[]> => {
+    const url = includeItems 
+      ? `/favorites/user/${userId}?includeItems=true`
+      : `/favorites/user/${userId}`;
+    const response = await apiRequest<{ favorites: Favorite[] }>(url);
+    return response.data!.favorites;
+  },
+
+  checkFavorite: async (itemId: string, userId: string): Promise<boolean> => {
+    const response = await apiRequest<{ isFavorited: boolean }>(`/favorites/check/${itemId}/${userId}`);
+    return response.data!.isFavorited;
+  },
+
+  checkFavoritesBatch: async (itemIds: string[], userId: string): Promise<Record<string, boolean>> => {
+    const response = await apiRequest<Record<string, boolean>>('/favorites/check-batch', {
+      method: 'POST',
+      body: JSON.stringify({
+        itemIds,
+        userId,
+      }),
+    });
+    return response.data!;
+  },
+
+  addFavorite: async (itemId: string, userId: string): Promise<Favorite> => {
+    const response = await apiRequest<{ favorite: Favorite }>('/favorites', {
+      method: 'POST',
+      headers: {
+        'user-id': userId,
+      },
+      body: JSON.stringify({
+        itemId,
+        userId,
+      }),
+    });
+
+    return response.data!.favorite;
+  },
+
+  removeFavorite: async (itemId: string, userId: string): Promise<void> => {
+    await apiRequest(`/favorites/${itemId}/${userId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Cart interfaces
+export interface CartItem {
+  id: string;
+  itemId: string;
+  item?: Item;
+  quantity: number;
+  customMessage?: string;
+  addedAt: string;
+}
+
+export interface Cart {
+  id: string;
+  userId: string;
+  items: CartItem[];
+  subtotal: string;
+  totalDiscount: string;
+  total: string;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Cart API
+export const cartAPI = {
+  getCart: async (userId: string): Promise<Cart> => {
+    const response = await apiRequest<{ cart: Cart }>(`/cart/user/${userId}`);
+    return response.data!.cart;
+  },
+
+  addToCart: async (
+    itemId: string,
+    userId: string,
+    quantity: number = 1,
+    customMessage?: string
+  ): Promise<void> => {
+    await apiRequest('/cart/add', {
+      method: 'POST',
+      headers: {
+        'user-id': userId,
+      },
+      body: JSON.stringify({
+        itemId,
+        userId,
+        quantity,
+        customMessage,
+      }),
+    });
+  },
+
+  updateCartItem: async (
+    cartItemId: string,
+    userId: string,
+    quantity?: number,
+    customMessage?: string
+  ): Promise<void> => {
+    await apiRequest(`/cart/item/${cartItemId}`, {
+      method: 'PUT',
+      headers: {
+        'user-id': userId,
+      },
+      body: JSON.stringify({
+        quantity,
+        customMessage,
+      }),
+    });
+  },
+
+  removeCartItem: async (cartItemId: string, userId: string): Promise<void> => {
+    await apiRequest(`/cart/item/${cartItemId}/${userId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  clearCart: async (userId: string): Promise<void> => {
+    await apiRequest(`/cart/user/${userId}`, {
       method: 'DELETE',
     });
   },

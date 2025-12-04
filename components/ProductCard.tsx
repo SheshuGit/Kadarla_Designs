@@ -1,8 +1,69 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Heart } from "lucide-react";
+import { getUser, favoritesAPI } from "../utils/api";
 
-const ProductCard = ({ product, onClick }: any) => {
+const ProductCard = ({ product, onClick, isFavorited: externalIsFavorited }: any) => {
   const navigate = useNavigate();
+  const [isFavorited, setIsFavorited] = useState(externalIsFavorited || false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [hasChecked, setHasChecked] = useState(false);
+
+  useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser);
+  }, []);
+
+  useEffect(() => {
+    if (externalIsFavorited !== undefined) {
+      setIsFavorited(externalIsFavorited);
+      setHasChecked(true);
+    }
+  }, [externalIsFavorited]);
+
+  useEffect(() => {
+    if (user && product?.id && !hasChecked && externalIsFavorited === undefined) {
+      checkFavoriteStatus();
+    }
+  }, [user, product?.id, hasChecked]);
+
+  const checkFavoriteStatus = async () => {
+    if (!user || !product?.id || hasChecked) return;
+    try {
+      setHasChecked(true);
+      const favorited = await favoritesAPI.checkFavorite(product.id, user.id);
+      setIsFavorited(favorited);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+      setHasChecked(false); // Retry on next render
+    }
+  };
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!user) {
+      alert('Please login to add items to favorites');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (isFavorited) {
+        await favoritesAPI.removeFavorite(product.id, user.id);
+        setIsFavorited(false);
+      } else {
+        await favoritesAPI.addFavorite(product.id, user.id);
+        setIsFavorited(true);
+      }
+    } catch (error: any) {
+      console.error('Error toggling favorite:', error);
+      alert(error.message || 'Failed to update favorite. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleClick = () => {
     if (onClick) {
@@ -69,9 +130,26 @@ const ProductCard = ({ product, onClick }: any) => {
 
   return (
     <div
-      className="bg-white p-4 rounded-xl shadow cursor-pointer hover:shadow-lg transition"
+      className="bg-white p-4 rounded-xl shadow cursor-pointer hover:shadow-lg transition relative"
       onClick={handleClick}
     >
+      {/* Favorite Heart Icon */}
+      <button
+        onClick={handleFavoriteClick}
+        disabled={isLoading || !user}
+        className={`absolute top-6 right-6 z-10 p-2 rounded-full shadow-lg transition-all transform hover:scale-110 ${
+          isFavorited
+            ? 'bg-red-500 text-white'
+            : 'bg-white/90 text-gray-400 hover:bg-white hover:text-red-500'
+        } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        title={user ? (isFavorited ? 'Remove from favorites' : 'Add to favorites') : 'Login to add favorites'}
+      >
+        <Heart 
+          size={20} 
+          className={isFavorited ? 'fill-current' : ''}
+        />
+      </button>
+
       <img
         src={getImageSrc()}
         alt={product.title || 'Product'}

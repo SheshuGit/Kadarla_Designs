@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { itemsAPI, Item } from '../utils/api';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Heart } from 'lucide-react';
+import { getUser, favoritesAPI } from '../utils/api';
 
 const BestSellers: React.FC = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [favoritesMap, setFavoritesMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -45,6 +50,54 @@ const BestSellers: React.FC = () => {
 
     fetchItems();
   }, []);
+
+  useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser);
+  }, []);
+
+  useEffect(() => {
+    if (user && products.length > 0) {
+      checkAllFavorites();
+    }
+  }, [user, products.length]);
+
+  const checkAllFavorites = async () => {
+    if (!user) return;
+    const favorites: Record<string, boolean> = {};
+    for (const product of products) {
+      try {
+        const isFav = await favoritesAPI.checkFavorite(product.id, user.id);
+        favorites[product.id] = isFav;
+      } catch (error) {
+        console.error(`Error checking favorite for ${product.id}:`, error);
+      }
+    }
+    setFavoritesMap(favorites);
+  };
+
+  const handleFavoriteClick = async (e: React.MouseEvent, productId: string) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      alert('Please login to add items to favorites');
+      return;
+    }
+
+    try {
+      const isFavorited = favoritesMap[productId];
+      if (isFavorited) {
+        await favoritesAPI.removeFavorite(productId, user.id);
+        setFavoritesMap(prev => ({ ...prev, [productId]: false }));
+      } else {
+        await favoritesAPI.addFavorite(productId, user.id);
+        setFavoritesMap(prev => ({ ...prev, [productId]: true }));
+      }
+    } catch (error: any) {
+      console.error('Error toggling favorite:', error);
+      alert(error.message || 'Failed to update favorite. Please try again.');
+    }
+  };
 
   // Helper function to convert base64 to data URL
   const getImageSrc = (image: string, imageType?: string) => {
@@ -91,6 +144,7 @@ const BestSellers: React.FC = () => {
             {products.map((product) => (
               <div
                 key={product.id}
+                onClick={() => navigate(`/product/${product.id}`)}
                 className="bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border border-mint-100 flex flex-col group overflow-hidden cursor-pointer"
               >
                 <div className="relative h-64 overflow-hidden bg-gray-100">
@@ -102,10 +156,23 @@ const BestSellers: React.FC = () => {
                       (e.target as HTMLImageElement).src = '/images/placeholder.png';
                     }}
                   />
-                <button className="absolute bottom-3 right-3 bg-white text-emerald-900 p-2 rounded-full shadow-md hover:bg-emerald-50 transition-colors opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
-                </button>
-              </div>
+                  {/* Favorite Heart Icon */}
+                  <button
+                    onClick={(e) => handleFavoriteClick(e, product.id)}
+                    disabled={!user}
+                    className={`absolute top-4 right-4 z-10 p-2 rounded-full shadow-lg transition-all transform hover:scale-110 ${
+                      favoritesMap[product.id]
+                        ? 'bg-red-500 text-white'
+                        : 'bg-white/90 text-gray-400 hover:bg-white hover:text-red-500'
+                    } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    title={user ? (favoritesMap[product.id] ? 'Remove from favorites' : 'Add to favorites') : 'Login to add favorites'}
+                  >
+                    <Heart 
+                      size={20} 
+                      className={favoritesMap[product.id] ? 'fill-current' : ''}
+                    />
+                  </button>
+                </div>
               <div className="p-5 flex flex-col flex-grow">
                 <h3 className="font-serif text-lg font-semibold text-slate-800 leading-tight mb-2 line-clamp-2">
                   {product.title}

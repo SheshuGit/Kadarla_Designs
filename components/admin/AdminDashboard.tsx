@@ -82,20 +82,20 @@ const AdminDashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-bold text-emerald-900 mb-2">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-emerald-900 mb-2">
           Business Overview
         </h1>
-        <p className="text-emerald-600">Welcome back! Here's what's happening with your business today.</p>
+        <p className="text-sm sm:text-base text-emerald-600">Welcome back! Here's what's happening with your business today.</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border border-emerald-100"
+              className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all border border-emerald-100"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-xl ${stat.bgColor}`}>
@@ -120,34 +120,34 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Charts and Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Orders */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-emerald-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-serif font-bold text-emerald-900">Recent Orders</h2>
-            <button className="text-sm text-emerald-600 hover:text-emerald-800 font-medium">
+        <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-emerald-100">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-serif font-bold text-emerald-900">Recent Orders</h2>
+            <button className="text-xs sm:text-sm text-emerald-600 hover:text-emerald-800 font-medium">
               View All
             </button>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {recentOrders.map((order) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-mint-50 to-white rounded-xl hover:shadow-md transition-all border border-emerald-100"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-mint-50 to-white rounded-lg sm:rounded-xl hover:shadow-md transition-all border border-emerald-100"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="font-semibold text-emerald-900">{order.id}</span>
+                <div className="flex-1 mb-2 sm:mb-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                    <span className="font-semibold text-sm sm:text-base text-emerald-900">{order.id}</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                       {order.status}
                     </span>
                   </div>
-                  <p className="text-sm text-emerald-700 font-medium">{order.customer}</p>
+                  <p className="text-xs sm:text-sm text-emerald-700 font-medium">{order.customer}</p>
                   <p className="text-xs text-emerald-600">{order.product}</p>
                   <p className="text-xs text-emerald-500 mt-1">{order.date}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-emerald-900">{order.amount}</p>
+                <div className="text-left sm:text-right mt-2 sm:mt-0">
+                  <p className="text-base sm:text-lg font-bold text-emerald-900">{order.amount}</p>
                 </div>
               </div>
             ))}
@@ -155,28 +155,28 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Top Products */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-emerald-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-serif font-bold text-emerald-900">Top Products</h2>
+        <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-emerald-100">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-serif font-bold text-emerald-900">Top Products</h2>
             <TrendingUp className="text-emerald-600" size={20} />
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {topProducts.map((product, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-mint-50 to-white rounded-xl hover:shadow-md transition-all border border-emerald-100"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-mint-50 to-white rounded-lg sm:rounded-xl hover:shadow-md transition-all border border-emerald-100"
               >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold shadow-md">
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 mb-2 sm:mb-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm sm:text-base shadow-md">
                     {index + 1}
                   </div>
                   <div>
-                    <p className="font-semibold text-emerald-900">{product.name}</p>
+                    <p className="font-semibold text-sm sm:text-base text-emerald-900">{product.name}</p>
                     <p className="text-xs text-emerald-600">{product.sales} sales</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-emerald-900">{product.revenue}</p>
+                <div className="text-left sm:text-right">
+                  <p className="font-bold text-sm sm:text-base text-emerald-900">{product.revenue}</p>
                 </div>
               </div>
             ))}
@@ -185,21 +185,21 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
-          <Users className="mb-3" size={32} />
-          <h3 className="text-2xl font-bold mb-1">1,234</h3>
-          <p className="text-emerald-50">Total Customers</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+          <Users className="mb-2 sm:mb-3" size={28} />
+          <h3 className="text-xl sm:text-2xl font-bold mb-1">1,234</h3>
+          <p className="text-xs sm:text-sm text-emerald-50">Total Customers</p>
         </div>
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
-          <Package className="mb-3" size={32} />
-          <h3 className="text-2xl font-bold mb-1">98.5%</h3>
-          <p className="text-blue-50">Order Fulfillment Rate</p>
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+          <Package className="mb-2 sm:mb-3" size={28} />
+          <h3 className="text-xl sm:text-2xl font-bold mb-1">98.5%</h3>
+          <p className="text-xs sm:text-sm text-blue-50">Order Fulfillment Rate</p>
         </div>
-        <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
-          <TrendingUp className="mb-3" size={32} />
-          <h3 className="text-2xl font-bold mb-1">+24.3%</h3>
-          <p className="text-pink-50">Growth This Month</p>
+        <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+          <TrendingUp className="mb-2 sm:mb-3" size={28} />
+          <h3 className="text-xl sm:text-2xl font-bold mb-1">+24.3%</h3>
+          <p className="text-xs sm:text-sm text-pink-50">Growth This Month</p>
         </div>
       </div>
     </div>

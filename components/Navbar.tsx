@@ -1,27 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, MapPin, ShoppingBag, LogIn, Home, Shield, User, LogOut, ChevronDown } from 'lucide-react';
+import { Search, Heart, ShoppingBag, LogIn, Home, Shield, User, LogOut, ChevronDown } from 'lucide-react';
 import logo from '../images/anuja_logo.png';
 import LoginModal from './LoginModal';
-import { getUser, authAPI, User as UserType } from '../utils/api';
+import { getUser, authAPI, cartAPI, User as UserType } from '../utils/api';
 
 const Navbar: React.FC = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [user, setUser] = useState<UserType | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
   const navigate = useNavigate();
 
   // Check if user is logged in on component mount
   useEffect(() => {
     const currentUser = getUser();
     setUser(currentUser);
+    if (currentUser) {
+      loadCartCount();
+    }
   }, []);
+
+  // Listen for cart updates
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      if (user) {
+        loadCartCount();
+      }
+    };
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    return () => window.removeEventListener('cartUpdated', handleCartUpdate);
+  }, [user]);
+
+  const loadCartCount = async () => {
+    if (!user) return;
+    try {
+      const cart = await cartAPI.getCart(user.id);
+      setCartItemCount(cart.itemCount);
+    } catch (error) {
+      console.error('Error loading cart count:', error);
+      setCartItemCount(0);
+    }
+  };
 
   // Update user state when login modal closes
   useEffect(() => {
     if (!isLoginModalOpen) {
       const currentUser = getUser();
       setUser(currentUser);
+      if (currentUser) {
+        loadCartCount();
+      } else {
+        setCartItemCount(0);
+      }
     }
   }, [isLoginModalOpen]);
 
@@ -84,15 +115,26 @@ const Navbar: React.FC = () => {
               <Home size={16} />
               <span className="hidden lg:inline">Home</span>
             </Link>
-            <button className="flex items-center gap-2 px-4 py-2 bg-pastel-blue rounded-full text-sky-900 text-sm font-medium hover:bg-sky-200 transition-colors shadow-sm">
-              <MapPin size={16} />
-              <span className="hidden lg:inline">Location</span>
-            </button>
+            <Link 
+              to="/favorites"
+              className="flex items-center gap-2 px-4 py-2 bg-pastel-pink rounded-full text-pink-900 text-sm font-medium hover:bg-pink-200 transition-colors shadow-sm"
+            >
+              <Heart size={16} />
+              <span className="hidden lg:inline">Favorites</span>
+            </Link>
 
-            <button className="flex items-center gap-2 px-4 py-2 bg-pastel-pink rounded-full text-pink-900 text-sm font-medium hover:bg-pink-200 transition-colors shadow-sm">
+            <Link
+              to="/cart"
+              className="relative flex items-center gap-2 px-4 py-2 bg-pastel-pink rounded-full text-pink-900 text-sm font-medium hover:bg-pink-200 transition-colors shadow-sm"
+            >
               <ShoppingBag size={16} />
               <span className="hidden lg:inline">Cart</span>
-            </button>
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </span>
+              )}
+            </Link>
 
             {/* User Menu or Login Button */}
             {user ? (

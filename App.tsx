@@ -19,6 +19,8 @@ import Wedding from "./components/category/Wedding";
 import BestSellersPage from "./components/category/Best_Sellers"; // category page
 import Registration from "./components/Registration";
 import ProductDetail from "./components/ProductDetail";
+import Favorites from "./components/Favorites";
+import Cart from "./components/Cart";
 
 // ADMIN PAGES
 import AdminLayout from "./components/admin/AdminLayout";
@@ -119,6 +121,32 @@ const App: React.FC = () => {
               <Navbar />
               <CategoryBar />
               <ProductDetail />
+              <Footer />
+            </div>
+          }
+        />
+
+        {/* FAVORITES PAGE */}
+        <Route
+          path="/favorites"
+          element={
+            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
+              <Navbar />
+              <CategoryBar />
+              <Favorites />
+              <Footer />
+            </div>
+          }
+        />
+
+        {/* CART PAGE */}
+        <Route
+          path="/cart"
+          element={
+            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
+              <Navbar />
+              <CategoryBar />
+              <Cart />
               <Footer />
             </div>
           }

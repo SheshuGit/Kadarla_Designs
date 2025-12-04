@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Loader2, CheckCircle } from 'lucide-react';
-import { itemsAPI, reviewsAPI, Item, Review, ReviewStats } from '../utils/api';
+import { itemsAPI, reviewsAPI, favoritesAPI, cartAPI, getUser, Item, Review, ReviewStats } from '../utils/api';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +13,10 @@ const ProductDetail: React.FC = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [customMessage, setCustomMessage] = useState('');
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [user, setUser] = useState<any>(null);
   
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -24,11 +28,73 @@ const ProductDetail: React.FC = () => {
   });
 
   useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser);
     if (id) {
       fetchProduct();
       fetchReviews();
+      if (currentUser) {
+        checkFavoriteStatus();
+      }
     }
   }, [id]);
+
+  const checkFavoriteStatus = async () => {
+    if (!user || !id) return;
+    try {
+      const favorited = await favoritesAPI.checkFavorite(id, user.id);
+      setIsFavorited(favorited);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const handleFavoriteClick = async () => {
+    if (!user) {
+      alert('Please login to add items to favorites');
+      return;
+    }
+
+    if (!product) return;
+
+    setIsFavoriteLoading(true);
+    try {
+      if (isFavorited) {
+        await favoritesAPI.removeFavorite(product.id, user.id);
+        setIsFavorited(false);
+      } else {
+        await favoritesAPI.addFavorite(product.id, user.id);
+        setIsFavorited(true);
+      }
+    } catch (error: any) {
+      console.error('Error toggling favorite:', error);
+      alert(error.message || 'Failed to update favorite. Please try again.');
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      alert('Please login to add items to cart');
+      return;
+    }
+
+    if (!product) return;
+
+    setIsAddingToCart(true);
+    try {
+      await cartAPI.addToCart(product.id, user.id, quantity, customMessage);
+      alert('Item added to cart successfully!');
+      // Trigger cart update event
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      alert(error.message || 'Failed to add item to cart. Please try again.');
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   const fetchProduct = async () => {
     try {
@@ -296,12 +362,28 @@ const ProductDetail: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-4">
-              <button className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl">
+              <button 
+                onClick={handleAddToCart}
+                disabled={isAddingToCart || !user || !product}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <ShoppingCart size={20} />
-                Add to Cart
+                {isAddingToCart ? 'Adding...' : 'Add to Cart'}
               </button>
-              <button className="px-6 py-4 bg-pink-100 text-pink-700 rounded-xl hover:bg-pink-200 transition-all">
-                <Heart size={20} />
+              <button 
+                onClick={handleFavoriteClick}
+                disabled={isFavoriteLoading || !user}
+                className={`px-6 py-4 rounded-xl transition-all ${
+                  isFavorited
+                    ? 'bg-red-500 text-white hover:bg-red-600'
+                    : 'bg-pink-100 text-pink-700 hover:bg-pink-200'
+                } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                title={user ? (isFavorited ? 'Remove from favorites' : 'Add to favorites') : 'Login to add favorites'}
+              >
+                <Heart 
+                  size={20} 
+                  className={isFavorited ? 'fill-current' : ''}
+                />
               </button>
               <button className="px-6 py-4 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-all">
                 <Share2 size={20} />

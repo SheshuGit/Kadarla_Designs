@@ -184,17 +184,17 @@ const AddItem: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-bold text-emerald-900 mb-2">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-emerald-900 mb-2">
           Add New Item
         </h1>
-        <p className="text-emerald-600">Add a new product to your inventory</p>
+        <p className="text-sm sm:text-base text-emerald-600">Add a new product to your inventory</p>
       </div>
 
       {/* Form Card */}
-      <div className="bg-white rounded-2xl p-8 shadow-lg border border-emerald-100">
+      <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-lg border border-emerald-100">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Product Image */}
           <div>
@@ -263,7 +263,7 @@ const AddItem: React.FC = () => {
           </div>
 
           {/* Price and Category Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Price */}
             <div>
               <label className="block text-sm font-semibold text-emerald-900 mb-2">
@@ -318,7 +318,7 @@ const AddItem: React.FC = () => {
           </div>
 
           {/* Stock and Discount Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Stock */}
             <div>
               <label className="block text-sm font-semibold text-emerald-900 mb-2">

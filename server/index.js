@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import authRoutes from './routes/auth.js';
 import itemsRoutes from './routes/items.js';
 import reviewsRoutes from './routes/reviews.js';
+import favoritesRoutes from './routes/favorites.js';
+import cartRoutes from './routes/cart.js';
 
 // Load environment variables
 dotenv.config();
@@ -77,6 +79,8 @@ mongoose.connection.on('reconnected', () => {
 app.use('/api/auth', authRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/favorites', favoritesRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

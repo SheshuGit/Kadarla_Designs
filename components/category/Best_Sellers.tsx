@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import ProductCard from "../ProductCard";
-import { itemsAPI, Item } from "../../utils/api";
+import { itemsAPI, Item, getUser, favoritesAPI } from "../../utils/api";
 import { Loader2 } from "lucide-react";
 
 const BestSellersPage: React.FC = () => {
     const [products, setProducts] = useState<Item[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [favoritesMap, setFavoritesMap] = useState<Record<string, boolean>>({});
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -60,7 +62,11 @@ const BestSellersPage: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                     {products.map((p) => (
-                        <ProductCard key={p.id} product={p} />
+                        <ProductCard 
+                            key={p.id} 
+                            product={p} 
+                            isFavorited={favoritesMap[p.id]}
+                        />
                     ))}
                 </div>
             )}

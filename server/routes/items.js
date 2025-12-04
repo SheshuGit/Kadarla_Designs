@@ -235,6 +235,66 @@ router.get('/', checkDBConnection, async (req, res) => {
   }
 });
 
+// Get multiple items by IDs (batch)
+router.post('/batch', checkDBConnection, async (req, res) => {
+  try {
+    const { itemIds } = req.body;
+    
+    if (!Array.isArray(itemIds) || itemIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'itemIds array is required'
+      });
+    }
+
+    // Validate all IDs
+    const validItemIds = itemIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+    
+    if (validItemIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          items: [],
+          count: 0
+        }
+      });
+    }
+
+    const items = await Item.find({
+      _id: { $in: validItemIds.map(id => new mongoose.Types.ObjectId(id)) }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        items: items.map(item => ({
+          id: item._id,
+          title: item.title,
+          price: item.price,
+          category: item.category,
+          description: item.description,
+          stock: item.stock,
+          image: item.image,
+          imageType: item.imageType || 'image/jpeg',
+          discount: item.discount || 0,
+          discountTitle: item.discountTitle,
+          discountStartDate: item.discountStartDate,
+          discountEndDate: item.discountEndDate,
+          isActive: item.isActive,
+          createdAt: item.createdAt
+        })),
+        count: items.length
+      }
+    });
+  } catch (error) {
+    console.error('❌ Batch get items error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.'
+    });
+  }
+});
+
 // Get single item by ID
 router.get('/:id', checkDBConnection, async (req, res) => {
   try {
