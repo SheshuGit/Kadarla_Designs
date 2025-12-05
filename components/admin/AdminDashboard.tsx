@@ -10,11 +10,12 @@ import {
   ArrowDownRight,
   Loader2
 } from 'lucide-react';
-import { ordersAPI, itemsAPI, Order, Item } from '../../utils/api';
+import { ordersAPI, itemsAPI, paymentsAPI, Order, Item, Payment } from '../../utils/api';
 
 const AdminDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,12 +25,14 @@ const AdminDashboard: React.FC = () => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [ordersData, itemsData] = await Promise.all([
+      const [ordersData, itemsData, paymentsData] = await Promise.all([
         ordersAPI.getAllOrders(),
-        itemsAPI.getItems()
+        itemsAPI.getItems(),
+        paymentsAPI.getAllPayments()
       ]);
       setOrders(ordersData);
       setItems(itemsData);
+      setPayments(paymentsData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -37,14 +40,13 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Calculate statistics
-  const totalRevenue = orders
-    .filter(order => order.orderStatus === 'delivered')
-    .reduce((sum, order) => {
-      const amount = typeof order.totalAmount === 'number' 
-        ? order.totalAmount 
-        : parseFloat(order.totalAmount.toString());
-      return sum + amount;
+  // Calculate statistics - Total Revenue from paid payments
+  const totalRevenue = payments
+    .filter(payment => payment.paymentStatus === 'paid')
+    .reduce((sum, payment) => {
+      return sum + (typeof payment.amount === 'number' 
+        ? payment.amount 
+        : parseFloat(payment.amount.toString()));
     }, 0);
 
   const totalOrders = orders.length;

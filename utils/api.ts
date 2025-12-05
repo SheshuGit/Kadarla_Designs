@@ -134,11 +134,12 @@ export const authAPI = {
     return response.data!;
   },
 
-  login: async (email: string, password: string): Promise<AuthResponse> => {
-    const response = await apiRequest<AuthResponse>('/auth/login', {
+  login: async (email: string, password: string, username?: string): Promise<AuthResponse & { isAdmin?: boolean }> => {
+    // Send email/username in the email field - backend will check admin first, then user
+    const response = await apiRequest<AuthResponse & { isAdmin?: boolean }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        email,
+        email: email, // Can be email or username
         password,
       }),
     });
@@ -564,6 +565,86 @@ export const ordersAPI = {
     const response = await apiRequest<{ order: Order }>(`/orders/${orderId}/status`, {
       method: 'PUT',
       body: JSON.stringify(updates),
+    });
+    return response.data!;
+  },
+};
+
+// Payment interfaces
+export interface Payment {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  userId: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  amount: number;
+  currency: string;
+  paymentMethod: 'cod' | 'online' | 'upi' | 'card';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+  transactionId?: string;
+  paymentGateway?: string;
+  paymentDate?: string;
+  failureReason?: string;
+  refundAmount?: number;
+  refundDate?: string;
+  refundReason?: string;
+  paymentDetails?: any;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Payment API
+export const paymentsAPI = {
+  getPaymentByOrder: async (orderId: string): Promise<Payment> => {
+    const response = await apiRequest<{ payment: Payment }>(`/payments/order/${orderId}`);
+    return response.data!.payment;
+  },
+
+  getUserPayments: async (userId: string): Promise<Payment[]> => {
+    const response = await apiRequest<{ payments: Payment[] }>(`/payments/user/${userId}`);
+    return response.data!.payments;
+  },
+
+  getAllPayments: async (status?: string, paymentMethod?: string): Promise<Payment[]> => {
+    let url = '/payments';
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (paymentMethod) params.append('paymentMethod', paymentMethod);
+    if (params.toString()) url += `?${params.toString()}`;
+    
+    const response = await apiRequest<{ payments: Payment[] }>(url);
+    return response.data!.payments;
+  },
+
+  updatePaymentStatus: async (
+    paymentId: string,
+    updates: {
+      paymentStatus?: string;
+      transactionId?: string;
+      paymentGateway?: string;
+      paymentDate?: string;
+      failureReason?: string;
+      paymentDetails?: any;
+    }
+  ): Promise<{ payment: Payment }> => {
+    const response = await apiRequest<{ payment: Payment }>(`/payments/${paymentId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    return response.data!;
+  },
+
+  processRefund: async (
+    paymentId: string,
+    refundAmount?: number,
+    refundReason?: string
+  ): Promise<{ payment: Payment }> => {
+    const response = await apiRequest<{ payment: Payment }>(`/payments/${paymentId}/refund`, {
+      method: 'POST',
+      body: JSON.stringify({ refundAmount, refundReason }),
     });
     return response.data!;
   },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Heart, ShoppingBag, LogIn, Home, Shield, User, LogOut, ChevronDown, Package } from 'lucide-react';
+import { Search, Heart, ShoppingBag, LogIn, Home, User, LogOut, ChevronDown, Package } from 'lucide-react';
 import logo from '../images/anuja_logo.png';
 import LoginModal from './LoginModal';
 import { getUser, authAPI, cartAPI, User as UserType } from '../utils/api';
@@ -138,10 +138,10 @@ const Navbar: React.FC = () => {
             {user && (
               <Link
                 to="/orders"
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full text-emerald-900 text-sm font-medium hover:bg-emerald-200 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full text-emerald-900 text-sm font-medium hover:bg-emerald-200 transition-colors shadow-sm whitespace-nowrap"
               >
                 <Package size={16} />
-                <span className="hidden lg:inline">My Orders</span>
+                <span className="hidden lg:inline whitespace-nowrap">My Orders</span>
               </Link>
             )}
 
@@ -191,14 +191,6 @@ const Navbar: React.FC = () => {
                 <span className="hidden lg:inline">Login</span>
               </button>
             )}
-
-            <Link 
-              to="/admin"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full text-white text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              <Shield size={16} />
-              <span className="hidden lg:inline">Admin</span>
-            </Link>
           </div>
         </div>
       </nav>

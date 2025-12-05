@@ -25,13 +25,24 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
     setIsLoading(true);
 
     try {
-      await authAPI.login(email, password);
-      onClose();
-      // Call the success callback if provided, otherwise reload
-      if (onLoginSuccess) {
-        onLoginSuccess();
+      // Try login with email/username and password
+      // Backend will check admin credentials first, then user credentials
+      const response = await authAPI.login(email, password, email);
+      
+      // Check if it's an admin login
+      if (response.isAdmin) {
+        onClose();
+        // Redirect to admin dashboard
+        navigate('/admin');
       } else {
-        window.location.reload();
+        // Regular user login
+        onClose();
+        // Call the success callback if provided, otherwise reload
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          window.location.reload();
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
@@ -78,20 +89,20 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* Email Field */}
+            {/* Email/Username Field */}
             <div className="relative">
               <label className="block text-sm font-medium text-emerald-900 mb-2">
-                Email Address
+                Email or Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                   <Mail className="text-emerald-400" size={20} />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@example.com"
+                  placeholder="your.email@example.com or username"
                   className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-emerald-100 rounded-xl text-emerald-900 placeholder-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-all shadow-sm"
                   required
                 />

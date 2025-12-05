@@ -175,12 +175,48 @@ router.post('/login', checkDBConnection, async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: 'Email/username and password are required'
       });
     }
 
+    // Trim whitespace from input
+    const trimmedEmail = (email || '').trim();
+    const trimmedPassword = (password || '').trim();
+
+    // First, check if it's an admin login attempt
+    const adminUsername = process.env.ADMIN_USERNAME ? process.env.ADMIN_USERNAME.trim() : null;
+    const adminPassword = process.env.ADMIN_PASSWORD ? process.env.ADMIN_PASSWORD.trim() : null;
+
+    // Check admin credentials first (case-sensitive for username, password should match exactly)
+    if (adminUsername && adminPassword) {
+      if (trimmedEmail === adminUsername && trimmedPassword === adminPassword) {
+        // Create a special admin token
+        const adminToken = jwt.sign(
+          { userId: 'admin', role: 'admin' },
+          process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+          { expiresIn: '7d' }
+        );
+
+        return res.json({
+          success: true,
+          message: 'Login successful',
+          data: {
+            user: {
+              id: 'admin',
+              fullName: 'Admin',
+              email: adminUsername,
+              role: 'admin'
+            },
+            token: adminToken,
+            isAdmin: true
+          }
+        });
+      }
+    }
+
+    // If not admin, proceed with regular user login
     // Find user and include password
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    const user = await User.findOne({ email: trimmedEmail.toLowerCase() }).select('+password');
     
     if (!user) {
       return res.status(401).json({
@@ -190,7 +226,7 @@ router.post('/login', checkDBConnection, async (req, res) => {
     }
 
     // Check password
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await user.comparePassword(trimmedPassword);
     
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -213,7 +249,8 @@ router.post('/login', checkDBConnection, async (req, res) => {
           phone: user.phone,
           role: user.role
         },
-        token
+        token,
+        isAdmin: false
       }
     });
   } catch (error) {
@@ -222,6 +259,21 @@ router.post('/login', checkDBConnection, async (req, res) => {
       message: 'Server error. Please try again later.'
     });
   }
+});
+
+// Test endpoint to check if admin credentials are configured (for debugging)
+router.get('/test-admin-config', (req, res) => {
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  
+  res.json({
+    success: true,
+    adminConfigured: !!(adminUsername && adminPassword),
+    usernameLength: adminUsername?.length || 0,
+    passwordLength: adminPassword?.length || 0,
+    usernameFirstChar: adminUsername ? adminUsername[0] : null,
+    passwordFirstChar: adminPassword ? adminPassword[0] : null
+  });
 });
 
 // Get current user (protected route)

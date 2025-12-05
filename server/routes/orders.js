@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import Item from '../models/Item.js';
+import Payment from '../models/Payment.js';
 
 const router = express.Router();
 
@@ -154,7 +155,7 @@ router.post('/place', checkDBConnection, verifyUser, async (req, res) => {
       items: orderItems,
       shippingAddress,
       paymentMethod,
-      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending',
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
       orderStatus: 'pending',
       subtotal,
       totalDiscount,
@@ -164,6 +165,21 @@ router.post('/place', checkDBConnection, verifyUser, async (req, res) => {
     });
 
     await order.save();
+
+    // Create payment record
+    const payment = new Payment({
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      userId: userId,
+      amount: totalAmount,
+      currency: 'INR',
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+      paymentDate: paymentMethod === 'cod' ? null : new Date(),
+      notes: notes || ''
+    });
+
+    await payment.save();
 
     // Update item stock
     for (const orderItem of orderItems) {
@@ -186,6 +202,12 @@ router.post('/place', checkDBConnection, verifyUser, async (req, res) => {
           orderStatus: order.orderStatus,
           paymentStatus: order.paymentStatus,
           placedAt: order.placedAt
+        },
+        payment: {
+          id: payment._id.toString(),
+          paymentStatus: payment.paymentStatus,
+          paymentMethod: payment.paymentMethod,
+          amount: payment.amount
         }
       }
     });
@@ -383,6 +405,16 @@ router.put('/:orderId/status', checkDBConnection, async (req, res) => {
         });
       }
       updateData.paymentStatus = paymentStatus;
+      
+      // Update payment record if it exists
+      const payment = await Payment.findOne({ orderId });
+      if (payment) {
+        payment.paymentStatus = paymentStatus;
+        if (paymentStatus === 'paid' && !payment.paymentDate) {
+          payment.paymentDate = new Date();
+        }
+        await payment.save();
+      }
     }
 
     const order = await Order.findByIdAndUpdate(
