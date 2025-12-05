@@ -474,3 +474,98 @@ export const cartAPI = {
   },
 };
 
+// Order interfaces
+export interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  email: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  landmark?: string;
+}
+
+export interface OrderItem {
+  itemId: string;
+  title: string;
+  price: number;
+  discountedPrice: number;
+  quantity: number;
+  customMessage?: string;
+  image: string;
+  imageType: string;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  userId: string;
+  items: OrderItem[];
+  shippingAddress: ShippingAddress;
+  paymentMethod: 'cod' | 'online' | 'upi' | 'card';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  orderStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  subtotal: number;
+  totalDiscount: number;
+  shippingCharges: number;
+  totalAmount: number;
+  notes?: string;
+  placedAt: string;
+  deliveredAt?: string;
+  createdAt: string;
+}
+
+// Order API
+export const ordersAPI = {
+  placeOrder: async (
+    userId: string,
+    shippingAddress: ShippingAddress,
+    paymentMethod: 'cod' | 'online' | 'upi' | 'card',
+    notes?: string
+  ): Promise<{ order: { id: string; orderNumber: string; totalAmount: number; orderStatus: string; paymentStatus: string; placedAt: string } }> => {
+    const response = await apiRequest<{ order: Order }>('/orders/place', {
+      method: 'POST',
+      headers: {
+        'user-id': userId,
+      },
+      body: JSON.stringify({
+        userId,
+        shippingAddress,
+        paymentMethod,
+        notes,
+      }),
+    });
+    return response.data!;
+  },
+
+  getUserOrders: async (userId: string): Promise<Order[]> => {
+    const response = await apiRequest<{ orders: Order[] }>(`/orders/user/${userId}`);
+    return response.data!.orders;
+  },
+
+  getOrder: async (orderId: string): Promise<Order> => {
+    const response = await apiRequest<{ order: Order }>(`/orders/${orderId}`);
+    return response.data!.order;
+  },
+
+  // Admin API functions
+  getAllOrders: async (status?: string): Promise<Order[]> => {
+    const url = status ? `/orders?status=${status}` : '/orders';
+    const response = await apiRequest<{ orders: Order[] }>(url);
+    return response.data!.orders;
+  },
+
+  updateOrderStatus: async (
+    orderId: string,
+    updates: { orderStatus?: string; paymentStatus?: string }
+  ): Promise<{ order: { id: string; orderNumber: string; orderStatus: string; paymentStatus: string } }> => {
+    const response = await apiRequest<{ order: Order }>(`/orders/${orderId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    return response.data!;
+  },
+};
+

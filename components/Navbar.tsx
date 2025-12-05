@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Heart, ShoppingBag, LogIn, Home, Shield, User, LogOut, ChevronDown } from 'lucide-react';
+import { Search, Heart, ShoppingBag, LogIn, Home, Shield, User, LogOut, ChevronDown, Package } from 'lucide-react';
 import logo from '../images/anuja_logo.png';
 import LoginModal from './LoginModal';
 import { getUser, authAPI, cartAPI, User as UserType } from '../utils/api';
@@ -135,6 +135,15 @@ const Navbar: React.FC = () => {
                 </span>
               )}
             </Link>
+            {user && (
+              <Link
+                to="/orders"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full text-emerald-900 text-sm font-medium hover:bg-emerald-200 transition-colors shadow-sm"
+              >
+                <Package size={16} />
+                <span className="hidden lg:inline">My Orders</span>
+              </Link>
+            )}
 
             {/* User Menu or Login Button */}
             {user ? (

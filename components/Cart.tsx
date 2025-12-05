@@ -15,27 +15,28 @@ const Cart: React.FC = () => {
     setUser(currentUser);
     
     if (currentUser) {
-      fetchCart();
+      fetchCart(currentUser.id);
     } else {
       setIsLoading(false);
     }
 
     // Listen for cart updates
     const handleCartUpdate = () => {
-      if (currentUser) {
-        fetchCart();
+      const updatedUser = getUser();
+      if (updatedUser) {
+        fetchCart(updatedUser.id);
       }
     };
     window.addEventListener('cartUpdated', handleCartUpdate);
     return () => window.removeEventListener('cartUpdated', handleCartUpdate);
   }, []);
 
-  const fetchCart = async () => {
-    if (!user) return;
+  const fetchCart = async (userId: string) => {
+    if (!userId) return;
     
     try {
       setIsLoading(true);
-      const cartData = await cartAPI.getCart(user.id);
+      const cartData = await cartAPI.getCart(userId);
       setCart(cartData);
     } catch (error) {
       console.error('Error fetching cart:', error);
@@ -51,7 +52,7 @@ const Cart: React.FC = () => {
     setIsUpdating(cartItemId);
     try {
       await cartAPI.updateCartItem(cartItemId, user.id, newQuantity);
-      await fetchCart();
+      await fetchCart(user.id);
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error: any) {
       console.error('Error updating quantity:', error);
@@ -71,7 +72,7 @@ const Cart: React.FC = () => {
     setIsUpdating(cartItemId);
     try {
       await cartAPI.removeCartItem(cartItemId, user.id);
-      await fetchCart();
+      await fetchCart(user.id);
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error: any) {
       console.error('Error removing item:', error);
@@ -90,7 +91,7 @@ const Cart: React.FC = () => {
 
     try {
       await cartAPI.clearCart(user.id);
-      await fetchCart();
+      await fetchCart(user.id);
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error: any) {
       console.error('Error clearing cart:', error);
@@ -373,7 +374,7 @@ const Cart: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => alert('Checkout functionality coming soon!')}
+                  onClick={() => navigate('/checkout')}
                   className="w-full px-6 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl text-lg"
                 >
                   Proceed to Checkout

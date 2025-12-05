@@ -16,19 +16,19 @@ const Favorites: React.FC = () => {
     setUser(currentUser);
     
     if (currentUser) {
-      fetchFavorites();
+      fetchFavorites(currentUser.id);
     } else {
       setIsLoading(false);
     }
   }, []);
 
-  const fetchFavorites = async () => {
-    if (!user) return;
+  const fetchFavorites = async (userId: string) => {
+    if (!userId) return;
     
     try {
       setIsLoading(true);
       // Fetch favorites with items included in a single request
-      const userFavorites = await favoritesAPI.getUserFavorites(user.id, true);
+      const userFavorites = await favoritesAPI.getUserFavorites(userId, true);
       setFavorites(userFavorites);
       
       // Extract items from favorites (items are already included)

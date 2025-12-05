@@ -18,12 +18,6 @@ const checkDBConnection = (req, res, next) => {
 // Create new item
 router.post('/', checkDBConnection, async (req, res) => {
   try {
-    console.log('📦 Add item request received:', {
-      title: req.body.title,
-      category: req.body.category,
-      price: req.body.price
-    });
-
     const { title, price, category, description, stock, image, imageType, discount, discountTitle, discountStartDate, discountEndDate } = req.body;
 
     // Validation
@@ -49,7 +43,6 @@ router.post('/', checkDBConnection, async (req, res) => {
     }
 
     // Create new item
-    console.log('💾 Creating item instance...');
     const item = new Item({
       title: title.trim(),
       price: Number(price),
@@ -67,7 +60,6 @@ router.post('/', checkDBConnection, async (req, res) => {
     // Validate the item document before saving
     const validationError = item.validateSync();
     if (validationError) {
-      console.error('❌ Validation error before save:', validationError);
       const errors = Object.values(validationError.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
@@ -75,47 +67,24 @@ router.post('/', checkDBConnection, async (req, res) => {
       });
     }
 
-    console.log('✅ Item instance created and validated');
-    console.log('💾 Attempting to save item...');
-    console.log('🔗 Database connection:', {
-      readyState: mongoose.connection.readyState,
-      dbName: mongoose.connection.name,
-      host: mongoose.connection.host
-    });
-
     const savedItem = await item.save();
-    console.log('✅ Item saved successfully!');
-    console.log('🆔 Item ID:', savedItem._id);
-    console.log('📊 Saved item data:', {
-      id: savedItem._id.toString(),
-      title: savedItem.title,
-      price: savedItem.price,
-      category: savedItem.category,
-      stock: savedItem.stock,
-      createdAt: savedItem.createdAt
-    });
 
     // Verify the item was actually saved to database
     try {
       const verifyItem = await Item.findById(savedItem._id);
       if (!verifyItem) {
-        console.error('❌ CRITICAL: Item was not found in database after save!');
         throw new Error('Item was not saved to database');
       }
-      console.log('✅ Verified: Item exists in database');
 
       // Also verify by querying the collection directly
       const db = mongoose.connection.db;
       const itemsCollection = db.collection('items');
       const count = await itemsCollection.countDocuments({ _id: savedItem._id });
-      console.log('📊 Collection verification - Documents found:', count);
 
       if (count === 0) {
-        console.error('❌ CRITICAL: Item not found in items collection!');
         throw new Error('Item was not saved to items collection');
       }
     } catch (verifyError) {
-      console.error('❌ Verification error:', verifyError);
       throw verifyError;
     }
 
@@ -142,14 +111,6 @@ router.post('/', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Add item error:', error);
-    console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      errors: error.errors,
-      stack: error.stack
-    });
 
     // Handle validation errors
     if (error.name === 'ValidationError') {
@@ -192,18 +153,6 @@ router.get('/', checkDBConnection, async (req, res) => {
 
     const items = await Item.find(query).sort({ createdAt: -1 });
     
-    console.log('📦 Get items - Found items:', items.length);
-    if (items.length > 0) {
-      console.log('📦 Sample item:', {
-        id: items[0]._id,
-        title: items[0].title,
-        hasImage: !!items[0].image,
-        imageLength: items[0].image?.length || 0,
-        imageType: items[0].imageType,
-        imagePreview: items[0].image?.substring(0, 50) + '...'
-      });
-    }
-    
     res.json({
       success: true,
       data: {
@@ -227,7 +176,6 @@ router.get('/', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get items error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -287,7 +235,6 @@ router.post('/batch', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Batch get items error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -329,7 +276,6 @@ router.get('/:id', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get item error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -390,7 +336,6 @@ router.put('/:id', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Update item error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -415,7 +360,6 @@ router.delete('/:id', checkDBConnection, async (req, res) => {
       message: 'Item deleted successfully'
     });
   } catch (error) {
-    console.error('❌ Delete item error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'

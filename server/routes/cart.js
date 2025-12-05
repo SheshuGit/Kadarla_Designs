@@ -107,6 +107,8 @@ router.get('/user/:userId', checkDBConnection, async (req, res) => {
       }
     });
 
+    const total = subtotal; // subtotal already includes discount applied
+
     res.json({
       success: true,
       data: {
@@ -116,7 +118,7 @@ router.get('/user/:userId', checkDBConnection, async (req, res) => {
           items: cartItems,
           subtotal: subtotal.toFixed(2),
           totalDiscount: totalDiscount.toFixed(2),
-          total: subtotal.toFixed(2),
+          total: total.toFixed(2),
           itemCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
           createdAt: cart.createdAt,
           updatedAt: cart.updatedAt
@@ -124,7 +126,6 @@ router.get('/user/:userId', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get cart error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -238,7 +239,6 @@ router.post('/add', checkDBConnection, verifyUser, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Add to cart error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -322,7 +322,6 @@ router.put('/item/:cartItemId', checkDBConnection, verifyUser, async (req, res) 
       }
     });
   } catch (error) {
-    console.error('❌ Update cart item error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -358,7 +357,6 @@ router.delete('/item/:cartItemId/:userId', checkDBConnection, async (req, res) =
       message: 'Item removed from cart'
     });
   } catch (error) {
-    console.error('❌ Remove cart item error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -394,7 +392,6 @@ router.delete('/user/:userId', checkDBConnection, async (req, res) => {
       message: 'Cart cleared'
     });
   } catch (error) {
-    console.error('❌ Clear cart error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'

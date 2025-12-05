@@ -65,7 +65,6 @@ router.get('/item/:itemId', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get reviews error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -146,7 +145,6 @@ router.post('/', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Create review error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -216,7 +214,6 @@ router.put('/:id', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Update review error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -249,7 +246,6 @@ router.delete('/:id', checkDBConnection, async (req, res) => {
       message: 'Review deleted successfully'
     });
   } catch (error) {
-    console.error('❌ Delete review error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'

@@ -7,19 +7,18 @@ import itemsRoutes from './routes/items.js';
 import reviewsRoutes from './routes/reviews.js';
 import favoritesRoutes from './routes/favorites.js';
 import cartRoutes from './routes/cart.js';
+import ordersRoutes from './routes/orders.js';
 
 // Load environment variables
 dotenv.config();
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-  console.error('❌ Unhandled Promise Rejection:', err);
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception:', err);
   process.exit(1);
 });
 
@@ -38,8 +37,6 @@ const connectDB = async () => {
     const dbName = process.env.DBName || 'kadarladesigns';
     
     if (!mongoURI) {
-      console.error('❌ MongoDB URI not found in environment variables');
-      console.error('Please set MONGODB_URI or MONGO_URI in your .env file');
       process.exit(1);
     }
     
@@ -56,23 +53,21 @@ const connectDB = async () => {
     console.log('📊 Database:', conn.connection.name);
     console.log('🏠 Host:', conn.connection.host);
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
-    console.error('Full error:', error);
     process.exit(1);
   }
 };
 
 // Handle connection events
 mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB connection error:', err);
+  // Connection error handled silently
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️ MongoDB disconnected');
+  // Disconnection handled silently
 });
 
 mongoose.connection.on('reconnected', () => {
-  console.log('✅ MongoDB reconnected');
+  // Reconnection handled silently
 });
 
 // Routes
@@ -81,6 +76,7 @@ app.use('/api/items', itemsRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', ordersRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -93,7 +89,6 @@ connectDB().then(() => {
     console.log(`🚀 Server running on port ${PORT}`);
   });
 }).catch((error) => {
-  console.error('❌ Failed to start server:', error);
   process.exit(1);
 });
 

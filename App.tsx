@@ -21,6 +21,9 @@ import Registration from "./components/Registration";
 import ProductDetail from "./components/ProductDetail";
 import Favorites from "./components/Favorites";
 import Cart from "./components/Cart";
+import Checkout from "./components/Checkout";
+import MyOrders from "./components/MyOrders";
+import UserOrderDetails from "./components/UserOrderDetails";
 
 // ADMIN PAGES
 import AdminLayout from "./components/admin/AdminLayout";
@@ -32,6 +35,7 @@ import Payments from "./components/admin/Payments";
 import Analytics from "./components/admin/Analytics";
 import Chat from "./components/admin/Chat";
 import Items from "./components/admin/Items";
+import OrderDetails from "./components/admin/OrderDetails";
 
 const App: React.FC = () => {
   return (
@@ -152,6 +156,45 @@ const App: React.FC = () => {
           }
         />
 
+        {/* CHECKOUT PAGE */}
+        <Route
+          path="/checkout"
+          element={
+            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
+              <Navbar />
+              <CategoryBar />
+              <Checkout />
+              <Footer />
+            </div>
+          }
+        />
+
+        {/* MY ORDERS PAGE */}
+        <Route
+          path="/orders"
+          element={
+            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
+              <Navbar />
+              <CategoryBar />
+              <MyOrders />
+              <Footer />
+            </div>
+          }
+        />
+
+        {/* USER ORDER DETAILS PAGE */}
+        <Route
+          path="/orders/:orderId"
+          element={
+            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
+              <Navbar />
+              <CategoryBar />
+              <UserOrderDetails />
+              <Footer />
+            </div>
+          }
+        />
+
         {/* AUTH PAGES */}
         <Route
           path="/register"
@@ -169,6 +212,7 @@ const App: React.FC = () => {
           <Route index element={<AdminDashboard />} />
           <Route path="orders/received" element={<OrdersReceived />} />
           <Route path="orders/completed" element={<CompletedOrders />} />
+          <Route path="orders/:orderId" element={<OrderDetails />} />
           <Route path="items" element={<Items />} />
           <Route path="add-item" element={<AddItem />} />
           <Route path="payments" element={<Payments />} />

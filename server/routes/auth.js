@@ -26,12 +26,6 @@ const generateToken = (userId) => {
 // Signup Route
 router.post('/signup', checkDBConnection, async (req, res) => {
   try {
-    console.log('📝 Signup request received:', { 
-      fullName: req.body.fullName, 
-      email: req.body.email,
-      phone: req.body.phone 
-    });
-
     const { fullName, email, phone, password, confirmPassword } = req.body;
 
     // Validation
@@ -84,7 +78,6 @@ router.post('/signup', checkDBConnection, async (req, res) => {
     }
 
     // Create new user
-    console.log('👤 Creating user instance...');
     const user = new User({
       fullName: fullName.trim(),
       email: email.toLowerCase().trim(),
@@ -95,7 +88,6 @@ router.post('/signup', checkDBConnection, async (req, res) => {
     // Validate the user document before saving
     const validationError = user.validateSync();
     if (validationError) {
-      console.error('❌ Validation error before save:', validationError);
       const errors = Object.values(validationError.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
@@ -103,43 +95,11 @@ router.post('/signup', checkDBConnection, async (req, res) => {
       });
     }
     
-    console.log('✅ User instance created and validated');
-
-    console.log('💾 Attempting to save user...');
-    console.log('📋 User data before save:', {
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      hasPassword: !!user.password,
-      role: user.role
-    });
-    console.log('🔗 Database connection:', {
-      readyState: mongoose.connection.readyState,
-      dbName: mongoose.connection.name,
-      host: mongoose.connection.host
-    });
-    
     // Save with explicit error handling
     let savedUser;
     try {
       savedUser = await user.save({ validateBeforeSave: true });
-      console.log('✅ User saved successfully!');
-      console.log('🆔 User ID:', savedUser._id);
-      console.log('📊 Saved user data:', {
-        id: savedUser._id.toString(),
-        fullName: savedUser.fullName,
-        email: savedUser.email,
-        phone: savedUser.phone,
-        role: savedUser.role,
-        createdAt: savedUser.createdAt
-      });
     } catch (saveError) {
-      console.error('❌ Save error details:', {
-        name: saveError.name,
-        message: saveError.message,
-        code: saveError.code,
-        errors: saveError.errors
-      });
       throw saveError;
     }
     
@@ -147,30 +107,23 @@ router.post('/signup', checkDBConnection, async (req, res) => {
     try {
       const verifyUser = await User.findById(savedUser._id);
       if (!verifyUser) {
-        console.error('❌ CRITICAL: User was not found in database after save!');
         throw new Error('User was not saved to database');
       }
-      console.log('✅ Verified: User exists in database');
       
       // Also verify by querying the collection directly
       const db = mongoose.connection.db;
       const usersCollection = db.collection('users');
       const count = await usersCollection.countDocuments({ _id: savedUser._id });
-      console.log('📊 Collection verification - Documents found:', count);
       
       if (count === 0) {
-        console.error('❌ CRITICAL: User not found in users collection!');
         throw new Error('User was not saved to users collection');
       }
     } catch (verifyError) {
-      console.error('❌ Verification error:', verifyError);
       throw verifyError;
     }
 
     // Generate token
     const token = generateToken(savedUser._id);
-
-    console.log('✅ User registered successfully');
 
     res.status(201).json({
       success: true,
@@ -187,14 +140,6 @@ router.post('/signup', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Signup error:', error);
-    console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      errors: error.errors,
-      stack: error.stack
-    });
     
     // Handle validation errors
     if (error.name === 'ValidationError') {
@@ -272,7 +217,6 @@ router.post('/login', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -315,7 +259,6 @@ router.get('/me', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get user error:', error);
     res.status(401).json({
       success: false,
       message: 'Invalid or expired token'
@@ -326,8 +269,6 @@ router.get('/me', checkDBConnection, async (req, res) => {
 // Debug endpoint to test database write
 router.post('/test-write', async (req, res) => {
   try {
-    console.log('🧪 Testing database write...');
-    
     const testUser = new User({
       fullName: 'Test User',
       email: `test${Date.now()}@example.com`,
@@ -335,17 +276,13 @@ router.post('/test-write', async (req, res) => {
       password: 'testpassword123'
     });
     
-    console.log('💾 Attempting to save test user...');
     const saved = await testUser.save();
-    console.log('✅ Test user saved:', saved._id);
     
     // Verify it exists
     const found = await User.findById(saved._id);
-    console.log('🔍 Test user found in DB:', !!found);
     
     // Clean up
     await User.findByIdAndDelete(saved._id);
-    console.log('🧹 Test user deleted');
     
     res.json({
       success: true,
@@ -357,7 +294,6 @@ router.post('/test-write', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Test write error:', error);
     res.status(500).json({
       success: false,
       message: 'Database write test failed',
@@ -402,7 +338,6 @@ router.get('/test', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Test endpoint error:', error);
     res.status(500).json({
       success: false,
       message: 'Database test failed',

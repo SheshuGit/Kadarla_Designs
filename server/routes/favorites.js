@@ -94,7 +94,6 @@ router.get('/user/:userId', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get favorites error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -124,7 +123,6 @@ router.get('/check/:itemId/:userId', checkDBConnection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Check favorite error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -183,7 +181,6 @@ router.post('/check-batch', checkDBConnection, async (req, res) => {
       data: result
     });
   } catch (error) {
-    console.error('❌ Batch check favorites error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
@@ -241,7 +238,6 @@ router.post('/', checkDBConnection, verifyUser, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Add favorite error:', error);
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -281,7 +277,6 @@ router.delete('/:itemId/:userId', checkDBConnection, async (req, res) => {
       message: 'Item removed from favorites'
     });
   } catch (error) {
-    console.error('❌ Remove favorite error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
