@@ -240,6 +240,11 @@ export const itemsAPI = {
     return response.data!.items;
   },
 
+  getTopOrderedItems: async (limit: number = 4): Promise<Item[]> => {
+    const response = await apiRequest<{ items: Item[] }>(`/items/top-ordered/${limit}`);
+    return response.data!.items;
+  },
+
   updateItem: async (
     id: string,
     updates: Partial<Item>

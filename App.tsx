@@ -11,12 +11,8 @@ import Occasions from "./components/Occasions";
 import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 
-// CATEGORY PAGES
-import Birthday from "./components/category/Birthday";
-import Anniversary from "./components/category/Anniversary";
-import Corporate from "./components/category/Corporate";
-import Wedding from "./components/category/Wedding";
-import BestSellersPage from "./components/category/Best_Sellers"; // category page
+// CATEGORY PAGE
+import CategoryPage from "./components/CategoryPage";
 import Registration from "./components/Registration";
 import ProductDetail from "./components/ProductDetail";
 import Favorites from "./components/Favorites";
@@ -60,58 +56,14 @@ const App: React.FC = () => {
           }
         />
 
-        {/* CATEGORY PAGES */}
+        {/* CATEGORY PAGE - Unified filter-based category page */}
         <Route
-          path="/birthday"
+          path="/category/:category"
           element={
             <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
               <Navbar />
               <CategoryBar />
-              <Birthday />
-              <Footer />
-            </div>
-          }
-        />
-        <Route
-          path="/anniversary"
-          element={
-            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
-              <Navbar />
-              <CategoryBar />
-              <Anniversary />
-              <Footer />
-            </div>
-          }
-        />
-        <Route
-          path="/corporate"
-          element={
-            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
-              <Navbar />
-              <CategoryBar />
-              <Corporate />
-              <Footer />
-            </div>
-          }
-        />
-        <Route
-          path="/wedding"
-          element={
-            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
-              <Navbar />
-              <CategoryBar />
-              <Wedding />
-              <Footer />
-            </div>
-          }
-        />
-        <Route
-          path="/best-sellers"
-          element={
-            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
-              <Navbar />
-              <CategoryBar />
-              <BestSellersPage />
+              <CategoryPage />
               <Footer />
             </div>
           }

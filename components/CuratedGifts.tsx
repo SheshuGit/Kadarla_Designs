@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Collection } from '../types';
 import birthdayImg from '../images/birthday.png';
 import anniversaryImg from '../images/anniversary.png';
@@ -16,7 +17,23 @@ const collections: Collection[] = [
 // Let's show the first 3 as primary highlights.
 
 const CuratedGifts: React.FC = () => {
+  const navigate = useNavigate();
   const displayCollections = collections.slice(0, 3);
+
+  // Map collection titles to category URLs
+  const getCategoryPath = (title: string): string => {
+    const categoryMap: Record<string, string> = {
+      'Birthday Selection': '/category/birthday',
+      'Anniversary Range': '/category/anniversary',
+      'Home Decor': '/category/housewarming',
+    };
+    return categoryMap[title] || '/';
+  };
+
+  const handleCollectionClick = (title: string) => {
+    const path = getCategoryPath(title);
+    navigate(path);
+  };
 
   return (
     <section className="py-16 max-w-7xl mx-auto px-6">
@@ -27,7 +44,11 @@ const CuratedGifts: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {displayCollections.map((item) => (
-          <div key={item.id} className="group cursor-pointer">
+          <div 
+            key={item.id} 
+            onClick={() => handleCollectionClick(item.title)}
+            className="group cursor-pointer"
+          >
             <div className="relative overflow-hidden rounded-2xl shadow-md bg-white">
               <img
                 src={item.image}

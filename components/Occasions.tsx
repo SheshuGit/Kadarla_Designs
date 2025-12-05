@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Cake, Heart, Home, Gift, Baby, Star, Plane, 
   Stethoscope, Gem 
@@ -22,10 +23,33 @@ const IconMap: Record<string, React.FC<any>> = {
 };
 
 const Occasions: React.FC = () => {
+  const navigate = useNavigate();
+
+  // Map occasion labels to category URLs
+  const getCategoryPath = (label: string): string => {
+    const categoryMap: Record<string, string> = {
+      'Birthday': '/category/birthday',
+      'Anniversary': '/category/anniversary',
+      'Housewarming': '/category/housewarming',
+      'Wedding': '/category/wedding',
+      'Baby Shower': '/category/baby-shower',
+      'Congratulations': '/category/congratulations',
+      'Farewell': '/category/farewell',
+      'Get Well Soon': '/category/get-well-soon',
+      'Proposal': '/category/proposal',
+    };
+    return categoryMap[label] || '/';
+  };
+
+  const handleOccasionClick = (label: string) => {
+    const path = getCategoryPath(label);
+    navigate(path);
+  };
+
   return (
     <section className="py-20 max-w-5xl mx-auto px-6">
       <div className="text-center mb-16">
-        <h2 className="text-3xl md:text-4xl font-serif font-bold text-emerald-900">What’s the Occasion?</h2>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-emerald-900">What's the Occasion?</h2>
         <p className="text-slate-500 mt-2 font-medium">Elevate every moment with thoughtful gifting options.</p>
       </div>
 
@@ -33,7 +57,11 @@ const Occasions: React.FC = () => {
         {occasions.map((item) => {
           const IconComponent = IconMap[item.iconName];
           return (
-            <div key={item.id} className="flex flex-col items-center group cursor-pointer">
+            <div 
+              key={item.id} 
+              onClick={() => handleOccasionClick(item.label)}
+              className="flex flex-col items-center group cursor-pointer"
+            >
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-pastel-yellow group-hover:bg-pastel-pink flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 transform group-hover:-translate-y-2 border-4 border-white">
                 {IconComponent && (
                   <IconComponent 

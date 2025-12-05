@@ -16,7 +16,18 @@ const itemSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['Birthday', 'Anniversary', 'Wedding', 'Corporate', 'Best Sellers', 'Custom'],
+    enum: [
+      'Birthday',
+      'Anniversary',
+      'Housewarming',
+      'Wedding',
+      'Baby Shower',
+      'Congratulations',
+      'Farewell',
+      'Get Well Soon',
+      'Proposal',
+      'Corporate'
+    ],
     trim: true
   },
   description: {

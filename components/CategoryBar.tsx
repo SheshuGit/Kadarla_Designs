@@ -4,11 +4,16 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 const categories = [
-  { label: "BIRTHDAY", path: "/birthday" },
-  { label: "ANNIVERSARY", path: "/anniversary" },
-  { label: "BEST SELLERS", path: "/best-sellers" },
-  { label: "CORPORATE", path: "/corporate" },
-  { label: "WEDDING", path: "/wedding" },
+  { label: "BIRTHDAY", path: "/category/birthday" },
+  { label: "ANNIVERSARY", path: "/category/anniversary" },
+  { label: "CORPORATE", path: "/category/corporate" },
+  { label: "WEDDING", path: "/category/wedding" },
+  { label: "HOUSEWARMING", path: "/category/housewarming" },
+  { label: "BABY SHOWER", path: "/category/baby-shower" },
+  { label: "CONGRATULATIONS", path: "/category/congratulations" },
+  { label: "FAREWELL", path: "/category/farewell" },
+  { label: "GET WELL SOON", path: "/category/get-well-soon" },
+  { label: "PROPOSAL", path: "/category/proposal" },
 ];
 
 const CategoryBar: React.FC = () => {

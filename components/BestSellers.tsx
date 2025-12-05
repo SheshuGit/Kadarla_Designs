@@ -15,34 +15,65 @@ const BestSellers: React.FC = () => {
     const fetchItems = async () => {
       try {
         setIsLoading(true);
-        const items = await itemsAPI.getItems('Best Sellers', true);
-        console.log('BestSellers (Home): Fetched items', {
-          count: items.length,
-          items: items.map(i => ({
-            id: i.id,
-            title: i.title,
-            hasImage: !!i.image,
-            imageLength: i.image?.length || 0,
-            imageType: i.imageType
-          }))
-        });
-        // Limit to 4 items for home page
-        const formattedProducts = items.slice(0, 4).map(item => ({
-          id: item.id,
+        // Fetch top 4 ordered items (best sellers based on order count)
+        const items = await itemsAPI.getTopOrderedItems(4);
+        
+        if (!items || items.length === 0) {
+          // If no ordered items, try to get some active items as fallback
+          try {
+            const allItems = await itemsAPI.getItems(undefined, true);
+            const fallbackItems = allItems.slice(0, 4).map(item => ({
+              id: item.id,
+              title: item.title,
+              price: typeof item.price === 'number' ? item.price : parseFloat(item.price.toString()),
+              image: item.image,
+              imageType: item.imageType || 'image/jpeg',
+              discount: item.discount || 0,
+              discountTitle: item.discountTitle || '',
+              discountStartDate: item.discountStartDate,
+              discountEndDate: item.discountEndDate
+            }));
+            setProducts(fallbackItems);
+          } catch (fallbackErr) {
+            console.error('Error fetching fallback items:', fallbackErr);
+            setProducts([]);
+          }
+          return;
+        }
+        
+        const formattedProducts = items.map(item => ({
+          id: item.id || item._id?.toString(),
           title: item.title,
-          price: item.price,
+          price: typeof item.price === 'number' ? item.price : parseFloat(item.price.toString()),
           image: item.image,
           imageType: item.imageType || 'image/jpeg',
-          discount: item.discount,
-          discountTitle: item.discountTitle,
+          discount: item.discount || 0,
+          discountTitle: item.discountTitle || '',
           discountStartDate: item.discountStartDate,
           discountEndDate: item.discountEndDate
         }));
         setProducts(formattedProducts);
       } catch (err) {
         console.error('Error fetching best sellers:', err);
-        // Fallback to empty array on error
-        setProducts([]);
+        // Try fallback to get some items
+        try {
+          const allItems = await itemsAPI.getItems(undefined, true);
+          const fallbackItems = allItems.slice(0, 4).map(item => ({
+            id: item.id,
+            title: item.title,
+            price: typeof item.price === 'number' ? item.price : parseFloat(item.price.toString()),
+            image: item.image,
+            imageType: item.imageType || 'image/jpeg',
+            discount: item.discount || 0,
+            discountTitle: item.discountTitle || '',
+            discountStartDate: item.discountStartDate,
+            discountEndDate: item.discountEndDate
+          }));
+          setProducts(fallbackItems);
+        } catch (fallbackErr) {
+          console.error('Error fetching fallback items:', fallbackErr);
+          setProducts([]);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -140,18 +171,18 @@ const BestSellers: React.FC = () => {
             <p>No best sellers available at the moment.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <div
-                key={product.id}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <div
+              key={product.id}
                 onClick={() => navigate(`/product/${product.id}`)}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border border-mint-100 flex flex-col group overflow-hidden cursor-pointer"
-              >
-                <div className="relative h-64 overflow-hidden bg-gray-100">
-                  <img
+              className="bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border border-mint-100 flex flex-col group overflow-hidden cursor-pointer"
+            >
+              <div className="relative h-64 overflow-hidden bg-gray-100">
+                <img
                     src={getImageSrc(product.image, product.imageType)}
-                    alt={product.title}
-                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                  alt={product.title}
+                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/images/placeholder.png';
                     }}
@@ -171,8 +202,8 @@ const BestSellers: React.FC = () => {
                       size={20} 
                       className={favoritesMap[product.id] ? 'fill-current' : ''}
                     />
-                  </button>
-                </div>
+                </button>
+              </div>
               <div className="p-5 flex flex-col flex-grow">
                 <h3 className="font-serif text-lg font-semibold text-slate-800 leading-tight mb-2 line-clamp-2">
                   {product.title}
@@ -193,19 +224,19 @@ const BestSellers: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <span className="text-emerald-700 font-bold text-lg">
-                        ₹{product.price.toLocaleString()}
-                      </span>
+                  <span className="text-emerald-700 font-bold text-lg">
+                    ₹{product.price.toLocaleString()}
+                  </span>
                     )}
-                    <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                      Best Seller
-                    </span>
+                  <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                    Best Seller
+                  </span>
                   </div>
                 </div>
               </div>
             </div>
           ))}
-          </div>
+        </div>
         )}
       </div>
     </section>

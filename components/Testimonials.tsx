@@ -1,5 +1,5 @@
 import React from 'react';
-import { Quote } from 'lucide-react';
+import { Quote, Star } from 'lucide-react';
 import { Testimonial } from '../types';
 
 const testimonials: Testimonial[] = [
@@ -7,16 +7,19 @@ const testimonials: Testimonial[] = [
     id: 1,
     name: 'Bhuvana',
     quote: 'The attention to detail in the packaging is unmatched. It felt like opening a treasure chest!',
+    rating: 5,
   },
   {
     id: 2,
-    name: 'Akhila',
+    name: 'sheshu',
     quote: 'Ordered the Moonlit Luxe Hamper for my wife. She was in tears of joy. Truly premium quality.',
+    rating: 4,
   },
   {
     id: 3,
     name: 'Rohith',
     quote: 'Kadaria Designs captures the essence of thoughtful gifting. Customer service was also splendid.',
+    rating: 5,
   },
 ];
 
@@ -41,11 +44,28 @@ const Testimonials: React.FC = () => {
                 <p className="text-slate-300 text-lg italic leading-relaxed mb-6 font-sans">
                   "{t.quote}"
                 </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">
-                    {t.name.charAt(0)}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">
+                      {t.name.charAt(0)}
+                    </div>
+                    <div className="flex flex-col">
+                      <h4 className="text-white font-bold tracking-wide">{t.name}</h4>
+                      <div className="flex items-center gap-1 mt-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={16}
+                            className={`${
+                              star <= (t.rating || 5)
+                                ? 'text-yellow-400 fill-yellow-400'
+                                : 'text-gray-500'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <h4 className="text-white font-bold tracking-wide">{t.name}</h4>
                 </div>
               </div>
             </div>

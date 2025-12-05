@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import Item from '../models/Item.js';
+import Order from '../models/Order.js';
 
 const router = express.Router();
 
@@ -358,6 +359,136 @@ router.delete('/:id', checkDBConnection, async (req, res) => {
     res.json({
       success: true,
       message: 'Item deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.'
+    });
+  }
+});
+
+// Get top ordered items (best sellers)
+router.get('/top-ordered/:limit?', checkDBConnection, async (req, res) => {
+  try {
+    const limit = parseInt(req.params.limit) || 4;
+    
+    // First check if there are any orders
+    const orderCount = await Order.countDocuments();
+    if (orderCount === 0) {
+      return res.json({
+        success: true,
+        items: []
+      });
+    }
+    
+    // Aggregate order items to count how many times each item was ordered
+    // This queries the Order collection and counts items based on order data
+    const topOrderedItems = await Order.aggregate([
+      // Unwind the items array to get individual order items
+      { $unwind: '$items' },
+      // Match only items that have a valid itemId
+      { $match: { 'items.itemId': { $exists: true, $ne: null } } },
+      // Group by itemId and sum the quantities
+      {
+        $group: {
+          _id: '$items.itemId',
+          totalQuantity: { $sum: '$items.quantity' }, // Total quantity ordered across all orders
+          orderCount: { $sum: 1 } // Count how many orders contain this item
+        }
+      },
+      // Sort by order count (descending), then by total quantity
+      { $sort: { orderCount: -1, totalQuantity: -1 } },
+      // Limit to top N items
+      { $limit: limit }
+    ]);
+
+    // If no orders exist, return empty array
+    if (topOrderedItems.length === 0) {
+      return res.json({
+        success: true,
+        items: []
+      });
+    }
+
+    // Convert itemIds to ObjectIds for query
+    const itemIds = topOrderedItems
+      .map(item => {
+        try {
+          // Handle both ObjectId and string formats
+          if (item._id instanceof mongoose.Types.ObjectId) {
+            return item._id;
+          }
+          return new mongoose.Types.ObjectId(item._id);
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter(id => id !== null);
+
+    if (itemIds.length === 0) {
+      return res.json({
+        success: true,
+        items: []
+      });
+    }
+
+    // Fetch full item details (include all items, even inactive ones, since they were ordered)
+    const items = await Item.find({ _id: { $in: itemIds } });
+    
+    // If no items found, it means items might have been deleted
+    if (items.length === 0) {
+      return res.json({
+        success: true,
+        items: []
+      });
+    }
+
+    // Create a map for quick lookup
+    const itemMap = new Map();
+    items.forEach(item => {
+      itemMap.set(item._id.toString(), item);
+    });
+
+    // Combine item details with order statistics, maintaining the order from aggregation
+    // This ensures we return items based on actual order data from the Order collection
+    const result = topOrderedItems
+      .map(orderedItem => {
+        // Handle both ObjectId and string formats
+        const itemId = orderedItem._id;
+        const itemIdStr = itemId instanceof mongoose.Types.ObjectId 
+          ? itemId.toString() 
+          : String(itemId);
+        
+        const item = itemMap.get(itemIdStr);
+        if (!item) {
+          // Item might have been deleted or is inactive, skip it
+          return null;
+        }
+        
+        return {
+          id: item._id.toString(),
+          title: item.title,
+          price: item.price,
+          category: item.category,
+          description: item.description,
+          stock: item.stock,
+          image: item.image,
+          imageType: item.imageType,
+          discount: item.discount,
+          discountTitle: item.discountTitle,
+          discountStartDate: item.discountStartDate,
+          discountEndDate: item.discountEndDate,
+          isActive: item.isActive,
+          orderCount: orderedItem.orderCount, // Number of orders containing this item
+          totalQuantity: orderedItem.totalQuantity // Total quantity ordered across all orders
+        };
+      })
+      .filter(item => item !== null);
+
+    res.json({
+      success: true,
+      items: result
     });
   } catch (error) {
     res.status(500).json({

@@ -21,10 +21,14 @@ const AddItem: React.FC = () => {
   const categories = [
     'Birthday',
     'Anniversary',
+    'Housewarming',
     'Wedding',
+    'Baby Shower',
+    'Congratulations',
+    'Farewell',
+    'Get Well Soon',
+    'Proposal',
     'Corporate',
-    'Best Sellers',
-    'Custom',
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
