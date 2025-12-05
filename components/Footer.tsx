@@ -61,7 +61,7 @@ const Footer: React.FC = () => {
         <div className="bg-pastel-purple rounded-3xl p-8 shadow-sm flex flex-col items-center justify-center text-center h-full min-h-[200px] hover:shadow-md transition-shadow">
           <h3 className="text-xl font-bold text-purple-900 mb-6">Follow Us</h3>
           <div className="flex gap-4">
-            <a href="https://www.instagram.com/kadarla.in/" className="p-3 bg-white/50 rounded-full text-purple-900 hover:bg-white transition-colors">
+            <a href="https://www.instagram.com/kadarladesigns?utm_source=qr&igsh=OWNycTVxNWsxNHhz" className="p-3 bg-white/50 rounded-full text-purple-900 hover:bg-white transition-colors">
               <Instagram size={20} />
             </a>
             <a href="https://wa.me/918106161717" className="p-3 bg-white/50 rounded-full text-purple-900 hover:bg-white transition-colors">
