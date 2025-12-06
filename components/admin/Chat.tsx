@@ -20,6 +20,7 @@ const Chat: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false);
 
@@ -29,10 +30,19 @@ const Chat: React.FC = () => {
     try {
       isLoadingRef.current = true;
       setIsLoading(true);
+      setError(null);
       const convs = await chatAPI.getConversations();
       setConversations(convs);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading conversations:', error);
+      const errorMsg = error.message || 'Failed to load conversations';
+      setError(errorMsg);
+      // Show user-friendly error message
+      if (errorMsg.includes('Access denied') || errorMsg.includes('403')) {
+        alert('Access denied. Please make sure you are logged in as admin.');
+      } else if (errorMsg.includes('401') || errorMsg.includes('token')) {
+        alert('Authentication failed. Please log in again.');
+      }
     } finally {
       setIsLoading(false);
       isLoadingRef.current = false;
@@ -46,11 +56,19 @@ const Chat: React.FC = () => {
       const msgs = await chatAPI.getMessagesForUser(userId);
       setMessages(msgs);
       // Mark messages as read when viewing
-      await chatAPI.markUserMessagesAsRead(userId);
+      try {
+        await chatAPI.markUserMessagesAsRead(userId);
+      } catch (markError) {
+        // Silently fail - not critical
+        console.warn('Error marking messages as read:', markError);
+      }
       // Reload conversations to update unread count
       await loadConversations();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading messages:', error);
+      if (error.message?.includes('401') || error.message?.includes('token')) {
+        alert('Authentication failed. Please log in again.');
+      }
     } finally {
       setIsLoadingMessages(false);
     }
@@ -166,6 +184,18 @@ const Chat: React.FC = () => {
           {isLoading && conversations.length === 0 ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="animate-spin text-emerald-600" size={32} />
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+              <MessageCircle className="text-red-300 mb-4" size={48} />
+              <p className="text-red-600 font-medium">Error loading conversations</p>
+              <p className="text-red-500 text-sm mt-2">{error}</p>
+              <button
+                onClick={() => loadConversations()}
+                className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                Retry
+              </button>
             </div>
           ) : filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center px-4">

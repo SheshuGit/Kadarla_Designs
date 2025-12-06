@@ -15,9 +15,31 @@ const UserChat: React.FC = () => {
   const isLoadingUnreadRef = useRef(false);
   const lastMessagesRef = useRef<string>('');
   
-  // Memoize user to prevent unnecessary re-renders
-  const user = useMemo(() => getUser(), []);
+  // Get user - check on every render to catch login changes
+  const [user, setUser] = useState(() => getUser());
   const userId = user?.id;
+
+  // Update user when storage changes (login/logout)
+  useEffect(() => {
+    const checkUser = () => {
+      const currentUser = getUser();
+      setUser(currentUser);
+    };
+    
+    // Check immediately
+    checkUser();
+    
+    // Listen for storage changes (login from another tab)
+    window.addEventListener('storage', checkUser);
+    
+    // Also check periodically in case user logs in
+    const interval = setInterval(checkUser, 2000);
+    
+    return () => {
+      window.removeEventListener('storage', checkUser);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Listen for open chat events from product detail page
   useEffect(() => {
@@ -36,11 +58,15 @@ const UserChat: React.FC = () => {
     };
   }, []);
 
-  // Load messages and unread count on mount
+  // Load messages and unread count on mount and when user changes
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setUnreadCount(0);
+      setMessages([]);
+      return;
+    }
     
-    // Initial load
+    // Initial load immediately
     loadMessages();
     loadUnreadCount();
   }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -49,7 +75,7 @@ const UserChat: React.FC = () => {
   useEffect(() => {
     if (!userId) return;
     
-    // Poll for new messages every 15 seconds
+    // Poll for unread count every 10 seconds (more frequent)
     const interval = setInterval(() => {
       if (isOpen) {
         // Only poll messages when chat is open
@@ -57,7 +83,7 @@ const UserChat: React.FC = () => {
       }
       // Always check unread count
       loadUnreadCount();
-    }, 15000);
+    }, 10000); // Poll every 10 seconds
 
     return () => clearInterval(interval);
   }, [userId, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -72,11 +98,13 @@ const UserChat: React.FC = () => {
   // Mark messages as read when chat is opened
   useEffect(() => {
     if (isOpen && userId) {
+      // Mark as read immediately
       markAsRead();
-      // Reload messages after marking as read
+      // Reload messages and unread count after a short delay
       const timer = setTimeout(() => {
         loadMessages();
-      }, 300);
+        loadUnreadCount();
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [isOpen, userId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -112,15 +140,17 @@ const UserChat: React.FC = () => {
     try {
       isLoadingUnreadRef.current = true;
       const count = await chatAPI.getUnreadCount();
-      // Only update if count actually changed
-      setUnreadCount(prev => prev !== count ? count : prev);
+      // Always update the count - ensure it's a number
+      setUnreadCount(typeof count === 'number' ? count : 0);
     } catch (error) {
-      // Silently fail - don't spam console with errors
+      // Log error but don't show to user
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
         // Network error - backend might be down, ignore
         return;
       }
       console.error('Error loading unread count:', error);
+      // Set to 0 on error to avoid showing stale count
+      setUnreadCount(0);
     } finally {
       isLoadingUnreadRef.current = false;
     }
@@ -130,6 +160,7 @@ const UserChat: React.FC = () => {
     if (!userId) return;
     try {
       await chatAPI.markAsRead();
+      // Update count immediately
       setUnreadCount(0);
     } catch (error) {
       // Silently fail - don't spam console
@@ -152,6 +183,8 @@ const UserChat: React.FC = () => {
       await chatAPI.sendMessage(messageText, productId);
       // Reload messages to get the new one
       await loadMessages();
+      // Reload unread count (shouldn't change, but ensure it's up to date)
+      loadUnreadCount();
       // Clear productId after first message
       if (productId) {
         setProductId(undefined);
@@ -193,7 +226,7 @@ const UserChat: React.FC = () => {
       >
         <MessageCircle size={28} className="relative" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse border-2 border-white">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center animate-pulse border-2 border-white px-1.5 z-50">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

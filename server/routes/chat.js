@@ -18,7 +18,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Check if it's admin token
+    // Check if it's a hardcoded admin token (legacy support)
     if (token === process.env.ADMIN_TOKEN || token === 'admin-token') {
       req.user = {
         id: 'admin',
@@ -27,7 +27,19 @@ const authenticateToken = async (req, res, next) => {
       return next();
     }
 
+    // Decode JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+    
+    // Check if it's an admin JWT token (userId is 'admin')
+    if (decoded.userId === 'admin') {
+      req.user = {
+        id: 'admin',
+        role: 'admin'
+      };
+      return next();
+    }
+
+    // Regular user - find user in database
     const user = await User.findById(decoded.userId);
 
     if (!user) {
@@ -152,10 +164,12 @@ router.get('/messages', checkDBConnection, authenticateToken, async (req, res) =
     if (userRole === 'admin') {
       const { userId: filterUserId } = req.query;
       if (filterUserId) {
+        // Admin viewing specific user's messages
         query.userId = mongoose.Types.ObjectId.isValid(filterUserId) 
           ? new mongoose.Types.ObjectId(filterUserId) 
           : filterUserId;
       }
+      // If no filterUserId, admin sees all messages (empty query)
     } else {
       // Regular users can only see their own messages
       query.userId = mongoose.Types.ObjectId.isValid(userId) 
@@ -171,8 +185,8 @@ router.get('/messages', checkDBConnection, authenticateToken, async (req, res) =
       success: true,
       data: {
         messages: messages.map(msg => ({
-          id: msg._id,
-          userId: msg.userId,
+          id: msg._id.toString(),
+          userId: msg.userId.toString ? msg.userId.toString() : String(msg.userId),
           productId: msg.productId,
           message: msg.message,
           sender: msg.sender,
@@ -320,19 +334,51 @@ router.get('/conversations', checkDBConnection, authenticateToken, async (req, r
       }
     ]);
 
+    // Fetch user details separately for any conversations that didn't match in lookup
+    const userIds = conversations
+      .map(conv => {
+        if (conv._id instanceof mongoose.Types.ObjectId) {
+          return conv._id;
+        }
+        // Try to convert string to ObjectId if valid
+        if (mongoose.Types.ObjectId.isValid(conv._id)) {
+          return new mongoose.Types.ObjectId(conv._id);
+        }
+        return null;
+      })
+      .filter(id => id !== null);
+
+    let userMap = new Map();
+    if (userIds.length > 0) {
+      const users = await User.find({ _id: { $in: userIds } });
+      users.forEach(user => {
+        userMap.set(user._id.toString(), user);
+      });
+    }
+
     res.json({
       success: true,
       data: {
         conversations: conversations.map(conv => {
           // Handle both ObjectId and string userId
-          const userId = conv._id instanceof mongoose.Types.ObjectId 
-            ? conv._id.toString() 
-            : String(conv._id);
+          let userId, user;
+          
+          if (conv._id instanceof mongoose.Types.ObjectId) {
+            userId = conv._id.toString();
+            user = (conv.user && conv.user.length > 0) ? conv.user[0] : userMap.get(userId);
+          } else {
+            userId = String(conv._id);
+            // Try to find user by string ID or converted ObjectId
+            user = (conv.user && conv.user.length > 0) ? conv.user[0] : null;
+            if (!user && mongoose.Types.ObjectId.isValid(userId)) {
+              user = userMap.get(userId);
+            }
+          }
           
           return {
             userId: userId,
-            userName: conv.user ? conv.user.fullName : 'Unknown User',
-            userEmail: conv.user ? conv.user.email : '',
+            userName: user ? user.fullName : 'Unknown User',
+            userEmail: user ? user.email : '',
             lastMessage: conv.lastMessageTime,
             lastMessageText: conv.lastMessageText,
             unreadCount: conv.unreadCount
