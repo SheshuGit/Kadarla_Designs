@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Loader2, CheckCircle, MessageCircle } from 'lucide-react';
 import { itemsAPI, reviewsAPI, favoritesAPI, cartAPI, getUser, Item, Review, ReviewStats } from '../utils/api';
+import { PLACEHOLDER_IMAGE } from '../utils/constants';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -168,7 +169,7 @@ const ProductDetail: React.FC = () => {
   // Convert base64 image to data URL
   const getImageSrc = () => {
     if (!product || !product.image) {
-      return '/images/placeholder.png';
+      return PLACEHOLDER_IMAGE;
     }
     
     let image = product.image;
@@ -250,7 +251,7 @@ const ProductDetail: React.FC = () => {
               alt={product.title}
               className="w-full h-[600px] object-cover"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
               }}
             />
           </div>

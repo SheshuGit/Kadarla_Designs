@@ -17,6 +17,7 @@ import {
   Circle
 } from 'lucide-react';
 import { getUser, ordersAPI, Order } from '../utils/api';
+import { PLACEHOLDER_IMAGE } from '../utils/constants';
 
 const UserOrderDetails: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -100,7 +101,7 @@ const UserOrderDetails: React.FC = () => {
   };
 
   const getImageSrc = (item: any) => {
-    if (!item || !item.image) return '/images/placeholder.png';
+    if (!item || !item.image) return PLACEHOLDER_IMAGE;
     let image = item.image;
     const imageType = item.imageType || 'image/jpeg';
     if (image.startsWith('data:')) return image;
@@ -299,7 +300,7 @@ const UserOrderDetails: React.FC = () => {
                       alt={item.title}
                       className="w-24 h-24 object-cover rounded-lg bg-gray-100"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                        (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
                       }}
                     />
                     <div className="flex-1">

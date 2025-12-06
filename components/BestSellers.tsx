@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { itemsAPI, Item } from '../utils/api';
 import { Loader2, Heart } from 'lucide-react';
 import { getUser, favoritesAPI } from '../utils/api';
+import { PLACEHOLDER_IMAGE } from '../utils/constants';
 
 const BestSellers: React.FC = () => {
   const navigate = useNavigate();
@@ -184,7 +185,7 @@ const BestSellers: React.FC = () => {
                   alt={product.title}
                   className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                      (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
                     }}
                   />
                   {/* Favorite Heart Icon */}

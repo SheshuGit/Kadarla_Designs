@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Edit, Trash2, Eye, Package, Plus, Loader2, X, Percent } from 'lucide-react';
 import { itemsAPI, Item } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
+import { PLACEHOLDER_IMAGE } from '../../utils/constants';
 
 const Items: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -156,7 +157,7 @@ const Items: React.FC = () => {
 
   // Convert base64 to data URL
   const getImageSrc = (image: string, imageType?: string) => {
-    if (!image) return '/images/placeholder.png';
+    if (!image) return PLACEHOLDER_IMAGE;
     if (image.startsWith('data:') || image.startsWith('http') || (image.startsWith('/') && image.length < 200)) {
       return image;
     }
@@ -292,7 +293,7 @@ const Items: React.FC = () => {
                   alt={item.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                    (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
                   }}
                 />
                 <div className={`absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-medium ${

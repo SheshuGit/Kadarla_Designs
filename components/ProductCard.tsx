@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { getUser, favoritesAPI } from "../utils/api";
+import { PLACEHOLDER_IMAGE } from "../utils/constants";
 
 const ProductCard = ({ product, onClick, isFavorited: externalIsFavorited }: any) => {
   const navigate = useNavigate();
@@ -87,8 +88,7 @@ const ProductCard = ({ product, onClick, isFavorited: externalIsFavorited }: any
   // Convert base64 image to data URL if needed
   const getImageSrc = () => {
     if (!product || !product.image) {
-      console.warn('ProductCard: No image found', { productTitle: product?.title });
-      return '/images/placeholder.png';
+      return PLACEHOLDER_IMAGE;
     }
     
     let image = product.image;
@@ -162,7 +162,7 @@ const ProductCard = ({ product, onClick, isFavorited: externalIsFavorited }: any
             imageLength: product?.image?.length
           });
           // Fallback if image fails to load
-          (e.target as HTMLImageElement).src = '/images/placeholder.png';
+          (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
         }}
       />
 

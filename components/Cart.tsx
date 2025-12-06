@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Trash2, Plus, Minus, Loader2, ArrowLeft, X } from 'lucide-react';
 import { getUser, cartAPI, Cart as CartType, CartItem } from '../utils/api';
+import { PLACEHOLDER_IMAGE } from '../utils/constants';
 
 const Cart: React.FC = () => {
   const navigate = useNavigate();
@@ -101,7 +102,7 @@ const Cart: React.FC = () => {
 
   // Helper function to get image source
   const getImageSrc = (item: any) => {
-    if (!item || !item.image) return '/images/placeholder.png';
+    if (!item || !item.image) return PLACEHOLDER_IMAGE;
     
     let image = item.image;
     const imageType = item.imageType || 'image/jpeg';
@@ -241,7 +242,7 @@ const Cart: React.FC = () => {
                           alt={item.title}
                           className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-xl bg-gray-100"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                            (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
                           }}
                         />
                       </div>

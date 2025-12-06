@@ -1,4 +1,5 @@
 import React from "react";
+import { PLACEHOLDER_IMAGE } from "../utils/constants";
 
 const ProductModal = ({ product, onClose }: any) => {
   if (!product) return null;
@@ -18,7 +19,7 @@ const ProductModal = ({ product, onClose }: any) => {
   // Convert base64 image to data URL if needed
   const getImageSrc = () => {
     if (!product || !product.image) {
-      return '/images/placeholder.png';
+      return PLACEHOLDER_IMAGE;
     }
     
     let image = product.image;
@@ -61,7 +62,7 @@ const ProductModal = ({ product, onClose }: any) => {
           className="rounded-xl w-full h-60 object-cover"
           alt={product.title}
           onError={(e) => {
-            (e.target as HTMLImageElement).src = '/images/placeholder.png';
+            (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
           }}
         />
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Eye, CheckCircle, X, Package, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { ordersAPI, Order } from '../../utils/api';
+import { PLACEHOLDER_IMAGE } from '../../utils/constants';
 
 interface OrderWithCustomer extends Order {
   customerName?: string;
@@ -96,7 +97,7 @@ const OrdersReceived: React.FC = () => {
   };
 
   const getImageSrc = (item: any) => {
-    if (!item || !item.image) return '/images/placeholder.png';
+    if (!item || !item.image) return PLACEHOLDER_IMAGE;
     let image = item.image;
     const imageType = item.imageType || 'image/jpeg';
     if (image.startsWith('data:')) return image;
@@ -241,7 +242,7 @@ const OrdersReceived: React.FC = () => {
                             alt={item.title}
                             className="w-12 h-12 object-cover rounded-lg bg-gray-100"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                              (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
                             }}
                           />
                           <div className="flex-1">
