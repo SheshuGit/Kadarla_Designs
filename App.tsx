@@ -13,6 +13,7 @@ import Footer from "./components/Footer";
 
 // CATEGORY PAGE
 import CategoryPage from "./components/CategoryPage";
+import SearchResults from "./components/SearchResults";
 import Registration from "./components/Registration";
 import ProductDetail from "./components/ProductDetail";
 import Favorites from "./components/Favorites";
@@ -20,6 +21,7 @@ import Cart from "./components/Cart";
 import Checkout from "./components/Checkout";
 import MyOrders from "./components/MyOrders";
 import UserOrderDetails from "./components/UserOrderDetails";
+import UserChat from "./components/UserChat";
 
 // ADMIN PAGES
 import AdminLayout from "./components/admin/AdminLayout";
@@ -64,6 +66,19 @@ const App: React.FC = () => {
               <Navbar />
               <CategoryBar />
               <CategoryPage />
+              <Footer />
+            </div>
+          }
+        />
+
+        {/* SEARCH RESULTS PAGE */}
+        <Route
+          path="/search"
+          element={
+            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
+              <Navbar />
+              <CategoryBar />
+              <SearchResults />
               <Footer />
             </div>
           }
@@ -172,6 +187,8 @@ const App: React.FC = () => {
           <Route path="chat" element={<Chat />} />
         </Route>
       </Routes>
+      {/* Global Chat Component - appears on all pages */}
+      <UserChat />
     </BrowserRouter>
   );
 };

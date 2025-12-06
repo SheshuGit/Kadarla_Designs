@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Loader2, CheckCircle } from 'lucide-react';
+import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Loader2, CheckCircle, MessageCircle } from 'lucide-react';
 import { itemsAPI, reviewsAPI, favoritesAPI, cartAPI, getUser, Item, Review, ReviewStats } from '../utils/api';
 
 const ProductDetail: React.FC = () => {
@@ -361,32 +361,53 @@ const ProductDetail: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button 
-                onClick={handleAddToCart}
-                disabled={isAddingToCart || !user || !product}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <button 
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart || !user || !product}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ShoppingCart size={20} />
+                  {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                </button>
+                <button 
+                  onClick={handleFavoriteClick}
+                  disabled={isFavoriteLoading || !user}
+                  className={`px-6 py-4 rounded-xl transition-all ${
+                    isFavorited
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-pink-100 text-pink-700 hover:bg-pink-200'
+                  } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  title={user ? (isFavorited ? 'Remove from favorites' : 'Add to favorites') : 'Login to add favorites'}
+                >
+                  <Heart 
+                    size={20} 
+                    className={isFavorited ? 'fill-current' : ''}
+                  />
+                </button>
+                <button className="px-6 py-4 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-all">
+                  <Share2 size={20} />
+                </button>
+              </div>
+              
+              {/* Ask Query Button */}
+              <button
+                onClick={() => {
+                  if (!user) {
+                    alert('Please login to ask a query');
+                    return;
+                  }
+                  // Dispatch event to open chat with product context
+                  window.dispatchEvent(new CustomEvent('openChat', { 
+                    detail: { productId: product?.id } 
+                  }));
+                }}
+                disabled={!user}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ShoppingCart size={20} />
-                {isAddingToCart ? 'Adding...' : 'Add to Cart'}
-              </button>
-              <button 
-                onClick={handleFavoriteClick}
-                disabled={isFavoriteLoading || !user}
-                className={`px-6 py-4 rounded-xl transition-all ${
-                  isFavorited
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-pink-100 text-pink-700 hover:bg-pink-200'
-                } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                title={user ? (isFavorited ? 'Remove from favorites' : 'Add to favorites') : 'Login to add favorites'}
-              >
-                <Heart 
-                  size={20} 
-                  className={isFavorited ? 'fill-current' : ''}
-                />
-              </button>
-              <button className="px-6 py-4 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-all">
-                <Share2 size={20} />
+                <MessageCircle size={20} />
+                Ask Query About This Product
               </button>
             </div>
           </div>

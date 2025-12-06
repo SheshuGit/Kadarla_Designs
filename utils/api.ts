@@ -655,3 +655,81 @@ export const paymentsAPI = {
   },
 };
 
+// Chat Message interface
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  productId?: string;
+  message: string;
+  sender: 'user' | 'admin';
+  isRead: boolean;
+  createdAt: string;
+}
+
+// Chat API
+export const chatAPI = {
+  sendMessage: async (message: string, productId?: string): Promise<ChatMessage> => {
+    const response = await apiRequest<{ chatMessage: ChatMessage }>('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({ message, productId }),
+    });
+    return response.data!.chatMessage;
+  },
+
+  getMessages: async (): Promise<ChatMessage[]> => {
+    const response = await apiRequest<{ messages: ChatMessage[] }>('/chat/messages');
+    return response.data!.messages;
+  },
+
+  getUnreadCount: async (): Promise<number> => {
+    const response = await apiRequest<{ unreadCount: number }>('/chat/unread-count');
+    return response.data!.unreadCount;
+  },
+
+  markAsRead: async (): Promise<void> => {
+    await apiRequest('/chat/mark-read', {
+      method: 'PUT',
+    });
+  },
+
+  // Admin-specific functions
+  getConversations: async (): Promise<Array<{
+    userId: string;
+    userName: string;
+    userEmail: string;
+    lastMessage: string;
+    lastMessageText?: string;
+    unreadCount: number;
+  }>> => {
+    const response = await apiRequest<{ conversations: Array<{
+      userId: string;
+      userName: string;
+      userEmail: string;
+      lastMessage: string;
+      lastMessageText?: string;
+      unreadCount: number;
+    }> }>('/chat/conversations');
+    return response.data!.conversations;
+  },
+
+  getMessagesForUser: async (userId: string): Promise<ChatMessage[]> => {
+    const response = await apiRequest<{ messages: ChatMessage[] }>(`/chat/messages?userId=${userId}`);
+    return response.data!.messages;
+  },
+
+  sendMessageToUser: async (userId: string, message: string): Promise<ChatMessage> => {
+    const response = await apiRequest<{ chatMessage: ChatMessage }>('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({ message, targetUserId: userId }),
+    });
+    return response.data!.chatMessage;
+  },
+
+  markUserMessagesAsRead: async (userId: string): Promise<void> => {
+    await apiRequest('/chat/mark-read', {
+      method: 'PUT',
+      body: JSON.stringify({ userId }),
+    });
+  },
+};
+

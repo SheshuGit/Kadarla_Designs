@@ -1,97 +1,147 @@
-import React, { useState } from 'react';
-import { Search, Send, Phone, Video, MoreVertical, Smile, Paperclip } from 'lucide-react';
-
-interface Message {
-  id: number;
-  text: string;
-  sender: 'customer' | 'admin';
-  timestamp: string;
-}
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, Send, MessageCircle, Loader2 } from 'lucide-react';
+import { chatAPI, ChatMessage } from '../../utils/api';
 
 interface Conversation {
-  id: number;
-  customerName: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
   lastMessage: string;
-  timestamp: string;
-  unread: number;
-  avatar: string;
-  messages: Message[];
+  lastMessageText?: string;
+  unreadCount: number;
 }
 
 const Chat: React.FC = () => {
-  const [selectedChat, setSelectedChat] = useState<number | null>(1);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isLoadingRef = useRef(false);
 
-  const conversations: Conversation[] = [
-    {
-      id: 1,
-      customerName: 'Rajesh Kumar',
-      lastMessage: 'When will my order be delivered?',
-      timestamp: '2 min ago',
-      unread: 2,
-      avatar: 'RK',
-      messages: [
-        { id: 1, text: 'Hello, I placed an order yesterday. Can you tell me the status?', sender: 'customer', timestamp: '10:30 AM' },
-        { id: 2, text: 'Hello Rajesh! Thank you for your order. Let me check the status for you.', sender: 'admin', timestamp: '10:32 AM' },
-        { id: 3, text: 'Your order #ORD-001 is currently being processed and will be shipped today.', sender: 'admin', timestamp: '10:33 AM' },
-        { id: 4, text: 'When will my order be delivered?', sender: 'customer', timestamp: '10:35 AM' },
-      ],
-    },
-    {
-      id: 2,
-      customerName: 'Priya Sharma',
-      lastMessage: 'Thank you so much!',
-      timestamp: '1 hour ago',
-      unread: 0,
-      avatar: 'PS',
-      messages: [
-        { id: 1, text: 'I received my order today. It\'s beautiful!', sender: 'customer', timestamp: '9:00 AM' },
-        { id: 2, text: 'That\'s wonderful to hear, Priya! We\'re so glad you love it.', sender: 'admin', timestamp: '9:05 AM' },
-        { id: 3, text: 'Thank you so much!', sender: 'customer', timestamp: '9:10 AM' },
-      ],
-    },
-    {
-      id: 3,
-      customerName: 'Amit Patel',
-      lastMessage: 'Can I customize the gift box?',
-      timestamp: '3 hours ago',
-      unread: 1,
-      avatar: 'AP',
-      messages: [
-        { id: 1, text: 'Hi, I\'m interested in the Anniversary Hamper. Can I customize it?', sender: 'customer', timestamp: '8:00 AM' },
-        { id: 2, text: 'Hello Amit! Yes, absolutely. We offer customization options. What would you like to customize?', sender: 'admin', timestamp: '8:15 AM' },
-        { id: 3, text: 'Can I customize the gift box?', sender: 'customer', timestamp: '8:20 AM' },
-      ],
-    },
-    {
-      id: 4,
-      customerName: 'Sneha Reddy',
-      lastMessage: 'Do you have same-day delivery?',
-      timestamp: '5 hours ago',
-      unread: 0,
-      avatar: 'SR',
-      messages: [
-        { id: 1, text: 'Do you offer same-day delivery in Mumbai?', sender: 'customer', timestamp: '6:00 AM' },
-        { id: 2, text: 'Yes, we do offer same-day delivery for orders placed before 2 PM. Would you like to place an order?', sender: 'admin', timestamp: '6:10 AM' },
-      ],
-    },
-  ];
+  // Load conversations
+  const loadConversations = useCallback(async () => {
+    if (isLoadingRef.current) return;
+    try {
+      isLoadingRef.current = true;
+      setIsLoading(true);
+      const convs = await chatAPI.getConversations();
+      setConversations(convs);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setIsLoading(false);
+      isLoadingRef.current = false;
+    }
+  }, []);
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Load messages for selected user
+  const loadMessages = useCallback(async (userId: string) => {
+    try {
+      setIsLoadingMessages(true);
+      const msgs = await chatAPI.getMessagesForUser(userId);
+      setMessages(msgs);
+      // Mark messages as read when viewing
+      await chatAPI.markUserMessagesAsRead(userId);
+      // Reload conversations to update unread count
+      await loadConversations();
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, [loadConversations]);
 
-  const currentChat = conversations.find(conv => conv.id === selectedChat);
+  // Initial load
+  useEffect(() => {
+    loadConversations();
+    
+    // Poll for new conversations every 10 seconds
+    const interval = setInterval(() => {
+      loadConversations();
+      if (selectedUserId) {
+        loadMessages(selectedUserId);
+      }
+    }, 10000);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+    return () => clearInterval(interval);
+  }, [loadConversations, selectedUserId, loadMessages]);
+
+  // Load messages when user is selected
+  useEffect(() => {
+    if (selectedUserId) {
+      loadMessages(selectedUserId);
+    } else {
+      setMessages([]);
+    }
+  }, [selectedUserId, loadMessages]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (messageInput.trim()) {
-      // Handle send message logic
-      console.log('Sending message:', messageInput);
-      setMessageInput('');
+    if (!messageInput.trim() || !selectedUserId || isSending) return;
+
+    const messageText = messageInput.trim();
+    setMessageInput('');
+    setIsSending(true);
+
+    try {
+      await chatAPI.sendMessageToUser(selectedUserId, messageText);
+      // Reload messages to get the new one
+      await loadMessages(selectedUserId);
+      // Reload conversations to update last message
+      await loadConversations();
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      alert(error.message || 'Failed to send message. Please try again.');
+      setMessageInput(messageText); // Restore message on error
+    } finally {
+      setIsSending(false);
     }
   };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
+    return date.toLocaleDateString();
+  };
+
+  const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const filteredConversations = conversations.filter(conv =>
+    conv.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conv.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectedConversation = conversations.find(conv => conv.userId === selectedUserId);
 
   return (
     <div className="h-[calc(100vh-200px)] flex gap-6">
@@ -113,114 +163,136 @@ const Chat: React.FC = () => {
 
         {/* Conversations */}
         <div className="flex-1 overflow-y-auto">
-          {filteredConversations.map((conversation) => (
-            <div
-              key={conversation.id}
-              onClick={() => setSelectedChat(conversation.id)}
-              className={`p-4 border-b border-emerald-100 cursor-pointer transition-all ${
-                selectedChat === conversation.id
-                  ? 'bg-gradient-to-r from-emerald-50 to-mint-50'
-                  : 'hover:bg-mint-50'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
-                  {conversation.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-emerald-900 truncate">{conversation.customerName}</h3>
-                    <span className="text-xs text-emerald-500 flex-shrink-0 ml-2">{conversation.timestamp}</span>
+          {isLoading && conversations.length === 0 ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="animate-spin text-emerald-600" size={32} />
+            </div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+              <MessageCircle className="text-emerald-300 mb-4" size={48} />
+              <p className="text-emerald-600 font-medium">No conversations yet</p>
+              <p className="text-emerald-500 text-sm mt-2">
+                {searchTerm ? 'No conversations match your search' : 'Start chatting with customers!'}
+              </p>
+            </div>
+          ) : (
+            filteredConversations.map((conversation) => (
+              <div
+                key={conversation.userId}
+                onClick={() => setSelectedUserId(conversation.userId)}
+                className={`p-4 border-b border-emerald-100 cursor-pointer transition-all ${
+                  selectedUserId === conversation.userId
+                    ? 'bg-gradient-to-r from-emerald-50 to-mint-50'
+                    : 'hover:bg-mint-50'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
+                    {getInitials(conversation.userName)}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-emerald-600 truncate">{conversation.lastMessage}</p>
-                    {conversation.unread > 0 && (
-                      <span className="bg-emerald-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 ml-2">
-                        {conversation.unread}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-emerald-900 truncate">{conversation.userName}</h3>
+                      <span className="text-xs text-emerald-500 flex-shrink-0 ml-2">
+                        {formatTime(conversation.lastMessage)}
                       </span>
-                    )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-emerald-600 truncate">
+                        {conversation.lastMessageText || conversation.userEmail}
+                      </p>
+                      {conversation.unreadCount > 0 && (
+                        <span className="bg-emerald-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 ml-2">
+                          {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
       {/* Chat Window */}
       <div className="flex-1 bg-white rounded-2xl shadow-lg border border-emerald-100 flex flex-col">
-        {currentChat ? (
+        {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-emerald-100 flex items-center justify-between">
+            <div className="p-4 border-b border-emerald-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-mint-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold shadow-md">
-                  {currentChat.avatar}
+                  {getInitials(selectedConversation.userName)}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-emerald-900">{currentChat.customerName}</h3>
-                  <p className="text-xs text-emerald-600">Active now</p>
+                  <h3 className="font-semibold text-emerald-900">{selectedConversation.userName}</h3>
+                  <p className="text-xs text-emerald-600">{selectedConversation.userEmail}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors">
-                  <Phone size={20} />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors">
-                  <Video size={20} />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors">
-                  <MoreVertical size={20} />
-                </button>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-mint-50/50 to-white">
-              {currentChat.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-md px-4 py-3 rounded-2xl ${
-                      message.sender === 'admin'
-                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white'
-                        : 'bg-white text-emerald-900 border border-emerald-100'
-                    } shadow-sm`}
-                  >
-                    <p className="text-sm">{message.text}</p>
-                    <p className={`text-xs mt-1 ${
-                      message.sender === 'admin' ? 'text-emerald-50' : 'text-emerald-500'
-                    }`}>
-                      {message.timestamp}
-                    </p>
-                  </div>
+              {isLoadingMessages && messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="animate-spin text-emerald-600" size={32} />
                 </div>
-              ))}
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <MessageCircle className="text-emerald-300 mb-4" size={48} />
+                  <p className="text-emerald-600 font-medium">No messages yet</p>
+                  <p className="text-emerald-500 text-sm mt-2">Start the conversation!</p>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-md px-4 py-3 rounded-2xl ${
+                        message.sender === 'admin'
+                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white'
+                          : 'bg-white text-emerald-900 border border-emerald-100'
+                      } shadow-sm`}
+                    >
+                      <p className="text-sm">{message.message}</p>
+                      <p
+                        className={`text-xs mt-1 ${
+                          message.sender === 'admin' ? 'text-emerald-50' : 'text-emerald-500'
+                        }`}
+                      >
+                        {formatTimestamp(message.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
             <div className="p-4 border-t border-emerald-100">
               <form onSubmit={handleSendMessage} className="flex items-center gap-3">
-                <button type="button" className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors">
-                  <Paperclip size={20} />
-                </button>
                 <input
                   type="text"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   placeholder="Type a message..."
                   className="flex-1 px-4 py-3 bg-mint-50 border-2 border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 text-emerald-900"
+                  disabled={isSending}
                 />
-                <button type="button" className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors">
-                  <Smile size={20} />
-                </button>
                 <button
                   type="submit"
-                  className="p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md"
+                  disabled={isSending || !messageInput.trim()}
+                  className="p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  <Send size={20} />
+                  {isSending ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    <Send size={20} />
+                  )}
                 </button>
               </form>
             </div>
@@ -239,4 +311,3 @@ const Chat: React.FC = () => {
 };
 
 export default Chat;
-
