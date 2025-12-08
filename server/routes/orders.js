@@ -149,13 +149,15 @@ router.post('/place', checkDBConnection, verifyUser, async (req, res) => {
     const orderNumber = `ORD${timestamp}${random}`;
 
     // Create order
+    // For online payments (online/upi/card via Razorpay), payment status starts as pending
+    // It will be updated to 'paid' after Razorpay payment verification
     const order = new Order({
       orderNumber,
       userId,
       items: orderItems,
       shippingAddress,
       paymentMethod,
-      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending', // All start as pending, updated after payment
       orderStatus: 'pending',
       subtotal,
       totalDiscount,
@@ -167,6 +169,7 @@ router.post('/place', checkDBConnection, verifyUser, async (req, res) => {
     await order.save();
 
     // Create payment record
+    // For online payments via Razorpay, status starts as pending and is updated after payment verification
     const payment = new Payment({
       orderId: order._id,
       orderNumber: order.orderNumber,
@@ -174,8 +177,8 @@ router.post('/place', checkDBConnection, verifyUser, async (req, res) => {
       amount: totalAmount,
       currency: 'INR',
       paymentMethod: paymentMethod,
-      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
-      paymentDate: paymentMethod === 'cod' ? null : new Date(),
+      paymentStatus: 'pending', // All payments start as pending, updated after verification
+      paymentDate: null, // Will be set after payment verification
       notes: notes || ''
     });
 

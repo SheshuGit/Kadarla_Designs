@@ -653,6 +653,48 @@ export const paymentsAPI = {
     });
     return response.data!;
   },
+
+  // Razorpay functions
+  createRazorpayOrder: async (
+    amount: number,
+    currency: string = 'INR',
+    orderId?: string,
+    userId?: string
+  ): Promise<{ orderId: string; amount: number; currency: string; receipt: string }> => {
+    const response = await apiRequest<{
+      orderId: string;
+      amount: number;
+      currency: string;
+      receipt: string;
+    }>('/payments/razorpay/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ amount, currency, orderId, userId }),
+    });
+    return response.data!;
+  },
+
+  verifyRazorpayPayment: async (
+    razorpay_order_id: string,
+    razorpay_payment_id: string,
+    razorpay_signature: string,
+    orderId?: string,
+    userId?: string
+  ): Promise<{ paymentId: string; orderId: string }> => {
+    const response = await apiRequest<{ paymentId: string; orderId: string }>(
+      '/payments/razorpay/verify',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+          orderId,
+          userId,
+        }),
+      }
+    );
+    return response.data!;
+  },
 };
 
 // Chat Message interface

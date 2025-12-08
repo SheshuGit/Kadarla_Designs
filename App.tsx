@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { getUser } from "./utils/api";
 
 import Navbar from "./components/Navbar";
 import CategoryBar from "./components/CategoryBar";
@@ -36,6 +37,34 @@ import Items from "./components/admin/Items";
 import OrderDetails from "./components/admin/OrderDetails";
 
 const App: React.FC = () => {
+  // Get current user to check role - make it reactive
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const user = getUser();
+    return user?.role === 'admin';
+  });
+
+  // Update admin status when user changes (login/logout)
+  useEffect(() => {
+    const checkUserRole = () => {
+      const user = getUser();
+      setIsAdmin(user?.role === 'admin');
+    };
+
+    // Check immediately
+    checkUserRole();
+
+    // Listen for storage changes (login from another tab)
+    window.addEventListener('storage', checkUserRole);
+
+    // Also check periodically in case user logs in/out
+    const interval = setInterval(checkUserRole, 1000);
+
+    return () => {
+      window.removeEventListener('storage', checkUserRole);
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -187,8 +216,8 @@ const App: React.FC = () => {
           <Route path="chat" element={<Chat />} />
         </Route>
       </Routes>
-      {/* Global Chat Component - appears on all pages */}
-      <UserChat />
+      {/* Global Chat Component - only visible to users, not admins */}
+      {!isAdmin && <UserChat />}
     </BrowserRouter>
   );
 };

@@ -1,9 +1,17 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 import Payment from '../models/Payment.js';
 import Order from '../models/Order.js';
 
 const router = express.Router();
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_RoJG6hAu1HIpx3',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'NtrPJROf61pXHqW7CnoKBwNJ'
+});
 
 // Middleware to check database connection
 const checkDBConnection = (req, res, next) => {
@@ -238,6 +246,119 @@ router.put('/:paymentId/status', checkDBConnection, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
+    });
+  }
+});
+
+// Create Razorpay order
+router.post('/razorpay/create-order', checkDBConnection, async (req, res) => {
+  try {
+    const { amount, currency = 'INR', orderId, userId } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid amount is required'
+      });
+    }
+
+    // Convert amount to paise (Razorpay expects amount in smallest currency unit)
+    const amountInPaise = Math.round(amount * 100);
+
+    const options = {
+      amount: amountInPaise,
+      currency: currency,
+      receipt: orderId || `receipt_${Date.now()}`,
+      notes: {
+        userId: userId,
+        orderId: orderId
+      }
+    };
+
+    const razorpayOrder = await razorpay.orders.create(options);
+
+    res.json({
+      success: true,
+      data: {
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        receipt: razorpayOrder.receipt
+      }
+    });
+  } catch (error) {
+    console.error('Error creating Razorpay order:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create payment order'
+    });
+  }
+});
+
+// Verify Razorpay payment
+router.post('/razorpay/verify', checkDBConnection, async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId, userId } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification data is required'
+      });
+    }
+
+    // Verify the payment signature
+    const text = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const generatedSignature = crypto
+      .createHmac('sha256', razorpay.key_secret)
+      .update(text)
+      .digest('hex');
+
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification failed - Invalid signature'
+      });
+    }
+
+    // Payment verified successfully
+    // Update order and payment status
+    if (orderId) {
+      const order = await Order.findById(orderId);
+      if (order) {
+        order.paymentStatus = 'paid';
+        await order.save();
+
+        // Update payment record
+        const payment = await Payment.findOne({ orderId });
+        if (payment) {
+          payment.paymentStatus = 'paid';
+          payment.transactionId = razorpay_payment_id;
+          payment.paymentGateway = 'razorpay';
+          payment.paymentDate = new Date();
+          payment.paymentDetails = {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature
+          };
+          await payment.save();
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment verified successfully',
+      data: {
+        paymentId: razorpay_payment_id,
+        orderId: razorpay_order_id
+      }
+    });
+  } catch (error) {
+    console.error('Error verifying Razorpay payment:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to verify payment'
     });
   }
 });

@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Truck
 } from 'lucide-react';
-import { getUser, cartAPI, ordersAPI, Cart as CartType, ShippingAddress } from '../utils/api';
+import { getUser, cartAPI, ordersAPI, paymentsAPI, Cart as CartType, ShippingAddress } from '../utils/api';
 import { PLACEHOLDER_IMAGE } from '../utils/constants';
 
 const Checkout: React.FC = () => {
@@ -140,24 +140,110 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    // For COD, place order directly
+    if (paymentMethod === 'cod') {
+      setIsPlacingOrder(true);
+      try {
+        const result = await ordersAPI.placeOrder(
+          user.id,
+          formData,
+          paymentMethod,
+          notes
+        );
+        
+        setOrderDetails(result.order);
+        setOrderPlaced(true);
+        
+        // Dispatch cart update event
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
+      } catch (error: any) {
+        console.error('Error placing order:', error);
+        alert(error.message || 'Failed to place order. Please try again.');
+      } finally {
+        setIsPlacingOrder(false);
+      }
+      return;
+    }
+
+    // For online payments (Razorpay), create order first, then process payment
     setIsPlacingOrder(true);
     try {
+      const shippingCharges = parseFloat(cart.subtotal) >= 500 ? 0 : 50;
+      const totalAmount = parseFloat(cart.subtotal) + shippingCharges;
+
+      // Create order first (with pending payment status)
       const result = await ordersAPI.placeOrder(
         user.id,
         formData,
         paymentMethod,
         notes
       );
-      
-      setOrderDetails(result.order);
-      setOrderPlaced(true);
-      
-      // Dispatch cart update event
-      window.dispatchEvent(new CustomEvent('cartUpdated'));
+
+      // Create Razorpay order
+      const razorpayOrder = await paymentsAPI.createRazorpayOrder(
+        totalAmount,
+        'INR',
+        result.order.id,
+        user.id
+      );
+
+      // Initialize Razorpay checkout
+      const options = {
+        key: 'rzp_test_RoJG6hAu1HIpx3', // Razorpay Key ID
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: 'Kadarla Designs',
+        description: `Order ${result.order.orderNumber}`,
+        order_id: razorpayOrder.orderId,
+        handler: async function (response: any) {
+          try {
+            // Verify payment on backend
+            await paymentsAPI.verifyRazorpayPayment(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature,
+              result.order.id,
+              user.id
+            );
+
+            // Payment successful
+            setOrderDetails(result.order);
+            setOrderPlaced(true);
+            
+            // Dispatch cart update event
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+          } catch (error: any) {
+            console.error('Error verifying payment:', error);
+            alert('Payment verification failed. Please contact support with order number: ' + result.order.orderNumber);
+          } finally {
+            setIsPlacingOrder(false);
+          }
+        },
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: '#10b981', // Emerald color
+        },
+        modal: {
+          ondismiss: function() {
+            setIsPlacingOrder(false);
+            alert('Payment cancelled. Your order has been placed but payment is pending. You can complete the payment later or contact support.');
+          }
+        },
+        notes: {
+          orderId: result.order.id,
+          orderNumber: result.order.orderNumber
+        }
+      };
+
+      const razorpay = (window as any).Razorpay(options);
+      razorpay.open();
     } catch (error: any) {
       console.error('Error placing order:', error);
       alert(error.message || 'Failed to place order. Please try again.');
-    } finally {
       setIsPlacingOrder(false);
     }
   };
