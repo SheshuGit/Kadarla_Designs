@@ -297,6 +297,16 @@ export const reviewsAPI = {
     return response.data!;
   },
 
+  canReview: async (
+    itemId: string,
+    userId: string
+  ): Promise<{ canReview: boolean; reason: 'eligible' | 'not_delivered' | 'already_reviewed' }> => {
+    const response = await apiRequest<{ canReview: boolean; reason: 'eligible' | 'not_delivered' | 'already_reviewed' }>(
+      `/reviews/can-review/${itemId}/${userId}`
+    );
+    return response.data!;
+  },
+
   addReview: async (
     itemId: string,
     userId: string,

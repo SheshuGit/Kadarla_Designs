@@ -1,5 +1,6 @@
 import express from 'express';
 import Review from '../models/Review.js';
+import Order from '../models/Order.js';
 import mongoose from 'mongoose';
 
 const router = express.Router();
@@ -72,6 +73,51 @@ router.get('/item/:itemId', checkDBConnection, async (req, res) => {
   }
 });
 
+// Check if a user can review an item (must have delivered order containing the item)
+router.get('/can-review/:itemId/:userId', checkDBConnection, async (req, res) => {
+  try {
+    const { itemId, userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(itemId) || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid item ID or user ID'
+      });
+    }
+
+    const alreadyReviewed = await Review.exists({ itemId, userId });
+    if (alreadyReviewed) {
+      return res.json({
+        success: true,
+        data: { canReview: false, reason: 'already_reviewed' }
+      });
+    }
+
+    const hasDeliveredOrder = await Order.exists({
+      userId,
+      orderStatus: 'delivered',
+      'items.itemId': itemId
+    });
+
+    if (!hasDeliveredOrder) {
+      return res.json({
+        success: true,
+        data: { canReview: false, reason: 'not_delivered' }
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: { canReview: true, reason: 'eligible' }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.'
+    });
+  }
+});
+
 // Create a new review
 router.post('/', checkDBConnection, async (req, res) => {
   try {
@@ -115,6 +161,19 @@ router.post('/', checkDBConnection, async (req, res) => {
       });
     }
 
+    // Only allow review after a delivered order that contains this item
+    const hasDeliveredOrder = await Order.exists({
+      userId,
+      orderStatus: 'delivered',
+      'items.itemId': itemId
+    });
+    if (!hasDeliveredOrder) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can write a review only after this product is delivered.'
+      });
+    }
+
     // Create new review
     const newReview = new Review({
       itemId,
@@ -122,7 +181,8 @@ router.post('/', checkDBConnection, async (req, res) => {
       userName: userName.trim(),
       userEmail: userEmail.trim(),
       rating: Number(rating),
-      review: review.trim()
+      review: review.trim(),
+      isVerified: true
     });
 
     const savedReview = await newReview.save();

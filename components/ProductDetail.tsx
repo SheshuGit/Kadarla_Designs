@@ -22,6 +22,9 @@ const ProductDetail: React.FC = () => {
   
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewEligibilityReason, setReviewEligibilityReason] = useState<'eligible' | 'not_delivered' | 'already_reviewed' | 'login_required'>('login_required');
+  const [isCheckingReviewEligibility, setIsCheckingReviewEligibility] = useState(false);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     review: '',
@@ -40,6 +43,30 @@ const ProductDetail: React.FC = () => {
       }
     }
   }, [id]);
+
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (!id) return;
+      if (!user) {
+        setCanReview(false);
+        setReviewEligibilityReason('login_required');
+        return;
+      }
+      try {
+        setIsCheckingReviewEligibility(true);
+        const res = await reviewsAPI.canReview(id, user.id);
+        setCanReview(!!res.canReview);
+        setReviewEligibilityReason(res.reason);
+      } catch (e) {
+        // If the check fails, default to conservative: don't allow review
+        setCanReview(false);
+        setReviewEligibilityReason('not_delivered');
+      } finally {
+        setIsCheckingReviewEligibility(false);
+      }
+    };
+    checkEligibility();
+  }, [id, user]);
 
   const checkFavoriteStatus = async () => {
     if (!user || !id) return;
@@ -429,12 +456,45 @@ const ProductDetail: React.FC = () => {
               Ratings & Reviews
             </h2>
             <button
-              onClick={() => setShowReviewForm(!showReviewForm)}
-              className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all"
+              onClick={() => {
+                if (!user) {
+                  navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`);
+                  return;
+                }
+                if (!canReview) return;
+                setShowReviewForm(!showReviewForm);
+              }}
+              disabled={isCheckingReviewEligibility}
+              title={
+                !user
+                  ? 'Sign in to write a review'
+                  : canReview
+                    ? 'Write a review'
+                    : (reviewEligibilityReason === 'already_reviewed'
+                        ? 'You already reviewed this product'
+                        : 'You can write a review only after delivery')
+              }
+              className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Write a Review
+              {!user
+                ? 'Sign in to Review'
+                : canReview
+                  ? 'Write a Review'
+                  : (reviewEligibilityReason === 'already_reviewed'
+                      ? 'Already Reviewed'
+                      : 'Review After Delivery')}
             </button>
           </div>
+
+          {!canReview && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-sm">
+              {!user
+                ? 'Please sign in to write a review.'
+                : (reviewEligibilityReason === 'already_reviewed'
+                    ? 'You have already reviewed this product.'
+                    : 'You can write a review only after your order is delivered.')}
+            </div>
+          )}
 
           {/* Review Form */}
           {showReviewForm && (
