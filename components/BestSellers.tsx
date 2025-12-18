@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { itemsAPI, Item } from '../utils/api';
 import { Loader2, Heart } from 'lucide-react';
 import { getUser, favoritesAPI } from '../utils/api';
@@ -7,6 +7,7 @@ import { PLACEHOLDER_IMAGE } from '../utils/constants';
 
 const BestSellers: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -112,7 +113,7 @@ const BestSellers: React.FC = () => {
     e.stopPropagation();
     
     if (!user) {
-      alert('Please login to add items to favorites');
+      navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`);
       return;
     }
 

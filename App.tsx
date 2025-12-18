@@ -23,6 +23,8 @@ import Checkout from "./components/Checkout";
 import MyOrders from "./components/MyOrders";
 import UserOrderDetails from "./components/UserOrderDetails";
 import UserChat from "./components/UserChat";
+import RequireAuth from "./components/RequireAuth";
+import LoginPage from "./components/LoginPage";
 
 // ADMIN PAGES
 import AdminLayout from "./components/admin/AdminLayout";
@@ -133,7 +135,9 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
               <Navbar />
               <CategoryBar />
-              <Favorites />
+              <RequireAuth>
+                <Favorites />
+              </RequireAuth>
               <Footer />
             </div>
           }
@@ -146,7 +150,9 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
               <Navbar />
               <CategoryBar />
-              <Cart />
+              <RequireAuth>
+                <Cart />
+              </RequireAuth>
               <Footer />
             </div>
           }
@@ -159,7 +165,9 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
               <Navbar />
               <CategoryBar />
-              <Checkout />
+              <RequireAuth>
+                <Checkout />
+              </RequireAuth>
               <Footer />
             </div>
           }
@@ -172,7 +180,9 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
               <Navbar />
               <CategoryBar />
-              <MyOrders />
+              <RequireAuth>
+                <MyOrders />
+              </RequireAuth>
               <Footer />
             </div>
           }
@@ -185,13 +195,25 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
               <Navbar />
               <CategoryBar />
-              <UserOrderDetails />
+              <RequireAuth>
+                <UserOrderDetails />
+              </RequireAuth>
               <Footer />
             </div>
           }
         />
 
         {/* AUTH PAGES */}
+        <Route
+          path="/login"
+          element={
+            <div className="min-h-screen bg-mint-50 selection:bg-pink-200 selection:text-pink-900 font-sans">
+              <Navbar />
+              <LoginPage />
+              <Footer />
+            </div>
+          }
+        />
         <Route
           path="/register"
           element={

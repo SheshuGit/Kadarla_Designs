@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Loader2, CheckCircle, MessageCircle } from 'lucide-react';
 import { itemsAPI, reviewsAPI, favoritesAPI, cartAPI, getUser, Item, Review, ReviewStats } from '../utils/api';
 import { PLACEHOLDER_IMAGE } from '../utils/constants';
@@ -7,6 +7,7 @@ import { PLACEHOLDER_IMAGE } from '../utils/constants';
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [product, setProduct] = useState<Item | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
@@ -52,7 +53,7 @@ const ProductDetail: React.FC = () => {
 
   const handleFavoriteClick = async () => {
     if (!user) {
-      alert('Please login to add items to favorites');
+      navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`);
       return;
     }
 
@@ -77,7 +78,7 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = async () => {
     if (!user) {
-      alert('Please login to add items to cart');
+      navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`);
       return;
     }
 
@@ -396,7 +397,7 @@ const ProductDetail: React.FC = () => {
               <button
                 onClick={() => {
                   if (!user) {
-                    alert('Please login to ask a query');
+                    navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`);
                     return;
                   }
                   // Dispatch event to open chat with product context

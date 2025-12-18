@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { getUser, favoritesAPI } from "../utils/api";
 import { PLACEHOLDER_IMAGE } from "../utils/constants";
 
 const ProductCard = ({ product, onClick, isFavorited: externalIsFavorited }: any) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isFavorited, setIsFavorited] = useState(externalIsFavorited || false);
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -45,7 +46,7 @@ const ProductCard = ({ product, onClick, isFavorited: externalIsFavorited }: any
     e.stopPropagation(); // Prevent card click
     
     if (!user) {
-      alert('Please login to add items to favorites');
+      navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`);
       return;
     }
 
