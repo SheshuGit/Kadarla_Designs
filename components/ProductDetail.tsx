@@ -367,20 +367,21 @@ const ProductDetail: React.FC = () => {
               <div className="flex gap-4">
                 <button 
                   onClick={handleAddToCart}
-                  disabled={isAddingToCart || !user || !product}
+                  disabled={isAddingToCart || !product}
+                  title={!user ? 'Please sign in to add this item to your cart' : undefined}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ShoppingCart size={20} />
-                  {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                  {isAddingToCart ? 'Adding...' : (!user ? 'Sign in to Add to Cart' : 'Add to Cart')}
                 </button>
                 <button 
                   onClick={handleFavoriteClick}
-                  disabled={isFavoriteLoading || !user}
+                  disabled={isFavoriteLoading}
                   className={`px-6 py-4 rounded-xl transition-all ${
                     isFavorited
                       ? 'bg-red-500 text-white hover:bg-red-600'
                       : 'bg-pink-100 text-pink-700 hover:bg-pink-200'
-                  } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  } ${!user ? 'opacity-70' : ''}`}
                   title={user ? (isFavorited ? 'Remove from favorites' : 'Add to favorites') : 'Login to add favorites'}
                 >
                   <Heart 
@@ -405,12 +406,18 @@ const ProductDetail: React.FC = () => {
                     detail: { productId: product?.id } 
                   }));
                 }}
-                disabled={!user}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!user ? 'Please sign in to ask a query about this product' : undefined}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg"
               >
                 <MessageCircle size={20} />
-                Ask Query About This Product
+                {!user ? 'Sign in to Ask a Query' : 'Ask Query About This Product'}
               </button>
+
+              {!user && (
+                <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                  Please sign in to add items to your cart, manage favorites, or ask questions about this product.
+                </p>
+              )}
             </div>
           </div>
         </div>
